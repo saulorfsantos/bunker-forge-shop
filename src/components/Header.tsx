@@ -121,14 +121,14 @@ export function Header() {
       </div>
 
       {/* Category nav */}
-      <nav className="bg-bunker-graphite border-b border-bunker-black hidden md:block">
+      <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden md:block">
         <div className="max-w-[1400px] mx-auto px-4 h-12 flex items-center gap-1">
           {categories.map((cat) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
                 to="/category/$slug"
                 params={{ slug: cat.slug }}
-                className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-text-primary hover:text-bunker-tan transition-colors flex items-center gap-1"
+                className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
               >
                 {cat.name}
                 <ChevronDown className="w-3 h-3" />
