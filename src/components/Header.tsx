@@ -25,17 +25,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full">
       {/* Top bar */}
-      <div className="bg-bunker-black border-b border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 h-9 flex items-center justify-between text-[11px] text-bunker-text-secondary">
+      <div className="bg-bunker-tan border-b border-bunker-tan-dark">
+        <div className="max-w-[1400px] mx-auto px-4 h-9 flex items-center justify-center text-center text-[11px] font-semibold uppercase tracking-wider text-bunker-military">
           <span className="hidden sm:inline">
             Frete grátis acima de R$ 499 | Parcele em até 10x
           </span>
           <span className="sm:hidden">Frete grátis +R$ 499 | 10x</span>
-          <nav className="hidden md:flex items-center gap-4">
-            <a href="#" className="hover:text-bunker-tan transition-colors">Minha Conta</a>
-            <a href="#" className="hover:text-bunker-tan transition-colors">Meus Pedidos</a>
-            <a href="#" className="hover:text-bunker-tan transition-colors">Ajuda</a>
-          </nav>
         </div>
       </div>
 
