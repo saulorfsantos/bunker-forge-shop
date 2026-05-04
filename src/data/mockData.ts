@@ -118,11 +118,7 @@ export const products: Product[] = [
     subcategory: "rifles-eletricos",
     brand: "G&G",
     sku: "GG-M4-CQB-001",
-    images: [
-      img("photo-1595590424283-b8f17842773f"),
-      img("photo-1567361808960-dec9cb578182"),
-      img("photo-1584967918942-2ee9b1adf467"),
-    ],
+    images: [p001, p002, p009],
     description:
       "Rifle elétrico AEG calibre 6mm com gearbox V2 reforçada, hop-up regulável e trilho picatinny full length. Ideal para operações CQB e jogos de campo aberto. Velocidade média 360 FPS com BB 0.20g.",
     specs: {
@@ -151,10 +147,7 @@ export const products: Product[] = [
     subcategory: "rifles-gbb",
     brand: "VFC",
     sku: "VFC-AK47-GBB",
-    images: [
-      img("photo-1568438350562-2cae6d394ad0"),
-      img("photo-1584967918942-2ee9b1adf467"),
-    ],
+    images: [p002, p009],
     description:
       "Rifle GBB (Gas Blow Back) full metal com sistema de recuo realista, blowback potente e magazine de gás de alta capacidade. Acabamento militar autêntico com madeira sintética.",
     specs: {
@@ -182,7 +175,7 @@ export const products: Product[] = [
     subcategory: "pistolas",
     brand: "Tokyo Marui",
     sku: "TM-G17-GBB",
-    images: [img("photo-1584208632869-05fa2b2a5934"), img("photo-1595590424283-b8f17842773f")],
+    images: [p003, p016],
     description:
       "Réplica oficial Tokyo Marui da Glock 17 com sistema GBB, slide metálico, trigger crisp e recuo realista. Magazine de gás incluso com capacidade de 25 BBs.",
     specs: {
@@ -210,7 +203,7 @@ export const products: Product[] = [
     subcategory: "bbs-e-gas",
     brand: "ARES",
     sku: "ARES-BB-025-4000",
-    images: [img("photo-1611024944203-79e2eb12fde2")],
+    images: [p004],
     description:
       "Munição BB 6mm 0.25g de alta precisão, fabricada com polímero polido sem rebarbas. Peso ideal para hop-up calibrado, garantindo trajetória estável e maior alcance.",
     specs: {
@@ -240,7 +233,7 @@ export const products: Product[] = [
     subcategory: "carabinas",
     brand: "Crosman",
     sku: "CRS-NP-55",
-    images: [img("photo-1576037794708-9f0e29c44e7e"), img("photo-1567361808960-dec9cb578182")],
+    images: [p005, p009],
     description:
       "Carabina de pressão calibre 5.5mm com sistema Nitro Piston, mais silencioso e durável que molas convencionais. Acompanha luneta 4x32 e trilho 11mm.",
     specs: {
@@ -268,7 +261,7 @@ export const products: Product[] = [
     subcategory: "pistolas",
     brand: "Gamo",
     sku: "GAMO-CO2-PT85",
-    images: [img("photo-1584208632869-05fa2b2a5934")],
+    images: [p006],
     description:
       "Pistola CO2 calibre 4.5mm com magazine rotativo de 8 tiros, trigger duplo single/double action. Acabamento metálico com pegada ergonômica.",
     specs: {
@@ -296,7 +289,7 @@ export const products: Product[] = [
     subcategory: "chumbinhos",
     brand: "Gamo",
     sku: "GAMO-CHB-55-250",
-    images: [img("photo-1611024944203-79e2eb12fde2")],
+    images: [p007],
     description:
       "Chumbinhos calibre 5.5mm de competição, formato diabolô para máxima precisão em tiro alvo. Liga de chumbo macio para deformação controlada.",
     specs: {
@@ -326,7 +319,7 @@ export const products: Product[] = [
     subcategory: "coletes",
     brand: "Invicta",
     sku: "INV-PC-MC-01",
-    images: [img("photo-1595241634564-13ee87815bdb"), img("photo-1556139830-eb5b8c5f4cab")],
+    images: [p008, p015],
     description:
       "Colete plate carrier com sistema MOLLE completo frontal, traseiro e laterais. Compatível com placas balísticas SAPI. Padrão Multicam autêntico, costura reforçada e ajustes em velcro.",
     specs: {
@@ -354,7 +347,7 @@ export const products: Product[] = [
     subcategory: "miras-red-dots",
     brand: "ARES",
     sku: "ARES-RD-T1",
-    images: [img("photo-1584967918942-2ee9b1adf467")],
+    images: [p009],
     description:
       "Mira red dot estilo T1 com retículo 2 MOA, ajustes de elevação e windage por click. Montagem em trilho picatinny 20mm. Brilho ajustável em 11 níveis, à prova d'água.",
     specs: {
@@ -382,7 +375,7 @@ export const products: Product[] = [
     subcategory: "lanternas",
     brand: "Nautika",
     sku: "NTK-LT-1200",
-    images: [img("photo-1568438350562-2cae6d394ad0")],
+    images: [p010],
     description:
       "Lanterna tática de mão com 1200 lúmens reais, 5 modos de operação incluindo strobe defensivo. Bateria 18650 recarregável via USB-C, corpo em alumínio aeronáutico.",
     specs: {
@@ -412,7 +405,7 @@ export const products: Product[] = [
     subcategory: "facas-taticas",
     brand: "Invicta",
     sku: "INV-FT-12",
-    images: [img("photo-1593618998160-e34014e67546")],
+    images: [p011],
     description:
       "Faca tática lâmina fixa em aço inox 440C com tratamento térmico, cabo em G10 antiderrapante. Bainha kydex com clip MOLLE para portar no colete ou cinto.",
     specs: {
@@ -440,7 +433,7 @@ export const products: Product[] = [
     subcategory: "multitools",
     brand: "Invicta",
     sku: "INV-MT-18",
-    images: [img("photo-1530124566582-a618bc2615dc")],
+    images: [p012],
     description:
       "Ferramenta multifuncional com 18 funções incluindo alicate, chaves, lâmina serrilhada, abridor, lima e furador. Construção em aço inox com estojo nylon.",
     specs: {
@@ -470,7 +463,7 @@ export const products: Product[] = [
     subcategory: "barracas",
     brand: "Guepardo",
     sku: "GPD-BR4-CAM",
-    images: [img("photo-1504280390367-361c6d9f38f4"), img("photo-1487730116645-74489c95b41b")],
+    images: [p013, p014],
     description:
       "Barraca de campanha para 4 pessoas em padrão camuflado. Coluna d'água 2000mm, sobreteto removível, mosquiteiro nas portas e janelas. Montagem rápida em 5 minutos.",
     specs: {
@@ -498,7 +491,7 @@ export const products: Product[] = [
     subcategory: "lanternas",
     brand: "Nautika",
     sku: "NTK-HL-800",
-    images: [img("photo-1532635241-17e820acc59f")],
+    images: [p014],
     description:
       "Lanterna de cabeça com 800 lúmens, foco ajustável e luz vermelha auxiliar para preservação da visão noturna. Bateria recarregável USB e ajuste elástico confortável.",
     specs: {
@@ -526,7 +519,7 @@ export const products: Product[] = [
     subcategory: "mochilas",
     brand: "Invicta",
     sku: "INV-MC-45L",
-    images: [img("photo-1622260614153-03223fb72052")],
+    images: [p015],
     description:
       "Mochila tática 45 litros com sistema MOLLE completo, compartimento para reservatório de hidratação 3L, cinta peitoral e abdominal acolchoadas. Padrão coiote.",
     specs: {
@@ -554,7 +547,7 @@ export const products: Product[] = [
     subcategory: "magazines",
     brand: "Cyma",
     sku: "CYMA-MAG-M4-5",
-    images: [img("photo-1595590424283-b8f17842773f")],
+    images: [p016],
     description:
       "Kit com 5 magazines mid-cap para M4/M16 AEG, capacidade 140 BBs cada. Corpo em polímero reforçado com lábios metálicos. Compatível com a maioria das réplicas AEG.",
     specs: {
