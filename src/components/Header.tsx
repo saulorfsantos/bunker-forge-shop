@@ -25,17 +25,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full">
       {/* Top bar */}
-      <div className="bg-bunker-black border-b border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 h-9 flex items-center justify-between text-[11px] text-bunker-text-secondary">
+      <div className="bg-bunker-tan border-b border-bunker-tan-dark">
+        <div className="max-w-[1400px] mx-auto px-4 h-9 flex items-center justify-center text-center text-[11px] font-semibold uppercase tracking-wider text-bunker-military">
           <span className="hidden sm:inline">
             Frete grátis acima de R$ 499 | Parcele em até 10x
           </span>
           <span className="sm:hidden">Frete grátis +R$ 499 | 10x</span>
-          <nav className="hidden md:flex items-center gap-4">
-            <a href="#" className="hover:text-bunker-tan transition-colors">Minha Conta</a>
-            <a href="#" className="hover:text-bunker-tan transition-colors">Meus Pedidos</a>
-            <a href="#" className="hover:text-bunker-tan transition-colors">Ajuda</a>
-          </nav>
         </div>
       </div>
 
@@ -126,14 +121,14 @@ export function Header() {
       </div>
 
       {/* Category nav */}
-      <nav className="bg-bunker-graphite border-b border-bunker-black hidden md:block">
+      <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden md:block">
         <div className="max-w-[1400px] mx-auto px-4 h-12 flex items-center gap-1">
           {categories.map((cat) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
                 to="/category/$slug"
                 params={{ slug: cat.slug }}
-                className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-text-primary hover:text-bunker-tan transition-colors flex items-center gap-1"
+                className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
               >
                 {cat.name}
                 <ChevronDown className="w-3 h-3" />
