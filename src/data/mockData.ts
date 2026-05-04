@@ -1,4 +1,20 @@
 import type { Product, Category } from "@/types/product";
+import p001 from "@/assets/products/p001-m4-cqb.jpg";
+import p002 from "@/assets/products/p002-ak47.jpg";
+import p003 from "@/assets/products/p003-glock17.jpg";
+import p004 from "@/assets/products/p004-bbs.jpg";
+import p005 from "@/assets/products/p005-carabina.jpg";
+import p006 from "@/assets/products/p006-co2-pistol.jpg";
+import p007 from "@/assets/products/p007-chumbinhos.jpg";
+import p008 from "@/assets/products/p008-colete.jpg";
+import p009 from "@/assets/products/p009-reddot.jpg";
+import p010 from "@/assets/products/p010-lanterna.jpg";
+import p011 from "@/assets/products/p011-faca.jpg";
+import p012 from "@/assets/products/p012-multitool.jpg";
+import p013 from "@/assets/products/p013-barraca.jpg";
+import p014 from "@/assets/products/p014-headlamp.jpg";
+import p015 from "@/assets/products/p015-mochila.jpg";
+import p016 from "@/assets/products/p016-magazines.jpg";
 
 export const categories: Category[] = [
   {
