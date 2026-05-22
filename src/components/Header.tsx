@@ -24,26 +24,17 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full">
-      {/* Top bar */}
-      <div className="bg-bunker-tan border-b border-bunker-tan-dark">
-        <div className="max-w-[1400px] mx-auto px-4 h-9 flex items-center justify-center text-center text-[11px] font-semibold uppercase tracking-wider text-bunker-military">
-          <span className="hidden sm:inline">
-            Frete grátis acima de R$ 499 | Parcele em até 10x
-          </span>
-          <span className="sm:hidden">Frete grátis +R$ 499 | 10x</span>
-        </div>
-      </div>
-
       {/* Main bar */}
       <div className="bg-bunker-charcoal border-b border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 h-20 flex items-center gap-4">
-          <Link to="/" className="shrink-0 flex items-center gap-2">
-            <img src={logoShield} alt="Bunker 81 Airsoft" className="h-14 w-auto" />
+        <div className="max-w-[1400px] mx-auto px-4 h-32 flex items-center gap-4">
+          <Link to="/" className="shrink-0 flex items-center gap-3">
+            <img src={logoShield} alt="Bunker 81 Airsoft" className="h-24 w-auto" />
             <span className="hidden lg:flex flex-col leading-none">
-              <span className="font-display text-bunker-tan text-xl uppercase tracking-wider">Bunker 81</span>
-              <span className="text-[10px] text-bunker-text-secondary uppercase tracking-widest">Onde a missão começa</span>
+              <span className="font-display text-bunker-tan text-3xl uppercase tracking-wider">Bunker 81</span>
+              <span className="text-xs text-bunker-text-secondary uppercase tracking-widest mt-1">Onde a missão começa</span>
             </span>
           </Link>
+
 
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-auto hidden md:flex">
             <input
