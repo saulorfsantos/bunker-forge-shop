@@ -8,7 +8,6 @@ import {
   getFeaturedProducts,
   getGearProducts,
 } from "@/data/mockData";
-import heroOperator from "@/assets/hero-operator.png";
 import heroBg from "@/assets/hero-bg.jpg";
 import bunkerBg from "@/assets/background-header.jpg";
 
@@ -35,15 +34,15 @@ function Home() {
     <Layout>
       {/* HERO */}
       <section
-        className="relative min-h-[70vh] flex items-center"
+        className="relative min-h-[80vh] flex items-center"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0.3) 100%), url(${heroBg})`,
+          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.2) 100%), url(${heroBg})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "center right",
         }}
       >
-        <div className="max-w-[1400px] mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-5 gap-10 items-center w-full">
-          <div className="md:col-span-3">
+        <div className="max-w-[1400px] mx-auto px-4 py-20 w-full">
+          <div className="max-w-2xl">
             <p
               className="text-bunker-military-light font-display uppercase tracking-widest text-2xl sm:text-3xl md:text-4xl mb-6"
               style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
@@ -71,13 +70,6 @@ function Home() {
                 Ver Ofertas
               </a>
             </div>
-          </div>
-          <div className="md:col-span-2 flex justify-center md:justify-end">
-            <img
-              src={heroOperator}
-              alt="Operador tático Bunker 81"
-              className="max-h-[560px] w-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.9)]"
-            />
           </div>
         </div>
       </section>
