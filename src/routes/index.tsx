@@ -37,13 +37,17 @@ function Home() {
       <section
         className="relative min-h-[70vh] flex items-center"
         style={{
-          background:
-            "radial-gradient(ellipse at 20% 30%, var(--color-bunker-charcoal) 0%, var(--color-bunker-black) 70%)",
+          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0.3) 100%), url(${heroBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         <div className="max-w-[1400px] mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-5 gap-10 items-center w-full">
           <div className="md:col-span-3">
-            <p className="text-bunker-military-light font-display uppercase tracking-widest text-xs md:text-sm mb-3">
+            <p
+              className="text-bunker-military-light font-display uppercase tracking-widest text-2xl sm:text-3xl md:text-4xl mb-6"
+              style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
+            >
               Bunker 81 — Onde a missão começa
             </p>
             <h1 className="font-display uppercase text-bunker-text-primary text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-wider">
@@ -58,7 +62,7 @@ function Home() {
                 params={{ slug: "airsoft" }}
                 className="inline-flex items-center justify-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-tan-dark transition-colors"
               >
-                Explorar Arsenal
+                Ver Equipamentos
               </Link>
               <a
                 href="#ofertas"
@@ -70,13 +74,14 @@ function Home() {
           </div>
           <div className="md:col-span-2 flex justify-center md:justify-end">
             <img
-              src={mascote}
-              alt="Operador Bunker 81"
-              className="max-h-[460px] w-auto drop-shadow-[0_25px_30px_rgba(0,0,0,0.6)]"
+              src={heroOperator}
+              alt="Operador tático Bunker 81"
+              className="max-h-[560px] w-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.9)]"
             />
           </div>
         </div>
       </section>
+
 
       {/* CARROSSEL 1 */}
       <section id="ofertas" className="bg-bunker-black border-t border-bunker-graphite">
