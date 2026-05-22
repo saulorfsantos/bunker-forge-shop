@@ -8,8 +8,10 @@ import {
   getFeaturedProducts,
   getGearProducts,
 } from "@/data/mockData";
-import mascote from "@/assets/mascote.png";
+import heroOperator from "@/assets/hero-operator.png";
+import heroBg from "@/assets/hero-bg.jpg";
 import bunkerBg from "@/assets/background-header.jpg";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
