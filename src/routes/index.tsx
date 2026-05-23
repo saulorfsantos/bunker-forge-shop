@@ -3,14 +3,14 @@ import { Layout } from "@/components/Layout";
 import { SectionTitle } from "@/components/SectionTitle";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { CategoryCard } from "@/components/CategoryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  categories,
-  getFeaturedProducts,
-  getGearProducts,
-} from "@/data/mockData";
+  useCategories,
+  useProductsByCategory,
+} from "@/hooks/useMedusaProducts";
+import { MEDUSA_CATEGORY_IDS } from "@/lib/medusa";
 import heroBg from "@/assets/hero-bg.jpg";
 import bunkerBg from "@/assets/background-header.jpg";
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,8 +27,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const featured = getFeaturedProducts();
-  const gear = getGearProducts();
+  const airsoftQuery = useProductsByCategory(MEDUSA_CATEGORY_IDS.AIRSOFT, 4);
+  const pressaoQuery = useProductsByCategory(MEDUSA_CATEGORY_IDS.PRESSAO, 4);
+  const gearQuery = useProductsByCategory(MEDUSA_CATEGORY_IDS.ACESSORIOS, 8);
+  const categoriesQuery = useCategories();
+
+  const featuredProducts = [
+    ...(airsoftQuery.data ?? []),
+    ...(pressaoQuery.data ?? []),
+  ];
+  const featuredLoading = airsoftQuery.isLoading || pressaoQuery.isLoading;
+  const featuredError = airsoftQuery.isError || pressaoQuery.isError;
+  const refetchFeatured = () => {
+    void airsoftQuery.refetch();
+    void pressaoQuery.refetch();
+  };
 
   return (
     <Layout>
@@ -74,7 +87,6 @@ function Home() {
         </div>
       </section>
 
-
       {/* CARROSSEL 1 */}
       <section id="ofertas" className="bg-bunker-black border-t border-bunker-graphite">
         <div className="max-w-[1400px] mx-auto px-4 py-14">
@@ -82,7 +94,13 @@ function Home() {
             title="Arsenal em Destaque"
             subtitle="Rifles e pistolas selecionados com os melhores preços"
           />
-          <ProductCarousel products={featured} />
+          <ProductCarousel
+            products={featuredProducts}
+            isLoading={featuredLoading}
+            isError={featuredError}
+            onRetry={refetchFeatured}
+            skeletonCount={4}
+          />
         </div>
       </section>
 
@@ -112,7 +130,13 @@ function Home() {
             title="Gear & Vestuário Tático"
             subtitle="Acessórios, coletes e equipamentos para operações reais"
           />
-          <ProductCarousel products={gear} />
+          <ProductCarousel
+            products={gearQuery.data ?? []}
+            isLoading={gearQuery.isLoading}
+            isError={gearQuery.isError}
+            onRetry={() => void gearQuery.refetch()}
+            skeletonCount={4}
+          />
         </div>
       </section>
 
@@ -120,11 +144,33 @@ function Home() {
       <section className="bg-bunker-charcoal border-t border-bunker-graphite">
         <div className="max-w-[1400px] mx-auto px-4 py-14">
           <SectionTitle title="Operações por Categoria" subtitle="Escolha sua linha de combate" />
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-            {categories.map((c) => (
-              <CategoryCard key={c.slug} category={c} />
-            ))}
-          </div>
+          {categoriesQuery.isError ? (
+            <div className="rounded-sm border border-bunker-graphite bg-bunker-black p-8 text-center">
+              <p className="text-bunker-text-secondary text-sm">
+                Não foi possível carregar as categorias.
+              </p>
+              <button
+                type="button"
+                onClick={() => void categoriesQuery.refetch()}
+                className="mt-4 inline-flex items-center justify-center border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-xs px-5 py-2 rounded-sm hover:bg-bunker-tan/10 transition-colors"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {categoriesQuery.isLoading
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton
+                      key={`category-skeleton-${index}`}
+                      className="aspect-square rounded-sm bg-bunker-graphite/60"
+                    />
+                  ))
+                : (categoriesQuery.data ?? []).map((category) => (
+                    <CategoryCard key={category.slug} category={category} />
+                  ))}
+            </div>
+          )}
         </div>
       </section>
     </Layout>

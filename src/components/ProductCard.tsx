@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
+import { useState } from "react";
 import type { Product } from "@/types/product";
 import { BunkerBadge } from "./BunkerBadge";
 import { PriceTag } from "./PriceTag";
@@ -7,6 +8,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import placeholderImage from "@/assets/logo-shield.png";
 
 interface ProductCardProps {
   product: Product;
@@ -17,6 +19,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addItem } = useCart();
   const fav = isFavorite(product.id);
+  const [imageSrc, setImageSrc] = useState(product.images[0] ?? placeholderImage);
 
   return (
     <article
@@ -31,9 +34,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
         className="relative aspect-square bg-bunker-black overflow-hidden block"
       >
         <img
-          src={product.images[0]}
+          src={imageSrc}
           alt={product.name}
           loading="lazy"
+          onError={() => setImageSrc(placeholderImage)}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
         />
 
