@@ -1,7 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "bunker-storefront",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "VITE_MEDUSA_BACKEND_URL": "https://bunker81-backend-medusa-api.sffweu.easypanel.host",
+    "VITE_MEDUSA_PUBLISHABLE_KEY": "pk_99d5794c58f067f9e103946feeaa00b26195231cff185d980e1b85c28c9e4d0b"
+  }
 }
