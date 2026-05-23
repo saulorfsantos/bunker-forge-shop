@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Search } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -7,12 +6,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { SectionTitle } from "@/components/SectionTitle";
 import { searchProducts } from "@/data/mockData";
 
-const searchSchema = z.object({
-  q: fallback(z.string(), "").default(""),
-});
-
 export const Route = createFileRoute("/search")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: z.object({
+    q: z.string().default("").catch(""),
+  }),
   head: ({ match }) => ({
     meta: [
       { title: `Busca: ${match.search.q || "—"} — Bunker 81 Airsoft` },
