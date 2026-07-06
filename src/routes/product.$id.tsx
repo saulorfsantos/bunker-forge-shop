@@ -6,29 +6,28 @@ import { PriceTag } from "@/components/PriceTag";
 import { BunkerBadge } from "@/components/BunkerBadge";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { SectionTitle } from "@/components/SectionTitle";
-import {
-  getCategoryBySlug,
-  getProductById,
-  getProductsByCategory,
-  formatBRL,
-} from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatBRL } from "@/data/mockData";
+import { useProduct, useProductsByCategory, useCategories } from "@/hooks/useMedusaProducts";
+import { MEDUSA_CATEGORY_IDS } from "@/lib/medusa";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+const CATEGORY_HANDLE_TO_ID: Record<string, string> = {
+  airsoft: MEDUSA_CATEGORY_IDS.AIRSOFT,
+  pressao: MEDUSA_CATEGORY_IDS.PRESSAO,
+  acessorios: MEDUSA_CATEGORY_IDS.ACESSORIOS,
+  cutelaria: MEDUSA_CATEGORY_IDS.CUTELARIA,
+};
+
 export const Route = createFileRoute("/product/$id")({
-  beforeLoad: ({ params }) => {
-    if (!getProductById(params.id)) throw notFound();
-  },
-  head: ({ params }) => {
-    const p = getProductById(params.id);
-    return {
-      meta: [
-        { title: p ? `${p.name} — Bunker 81 Airsoft` : "Produto" },
-        { name: "description", content: p?.description.slice(0, 160) ?? "" },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Produto — Bunker 81 Airsoft" },
+      { name: "description", content: "Detalhes do produto na Bunker 81 Airsoft." },
+    ],
+  }),
   component: ProductPage,
 });
 
@@ -36,8 +35,10 @@ type Tab = "desc" | "specs" | "reviews";
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const product = getProductById(id)!;
-  const category = getCategoryBySlug(product.category);
+  const { data: product, isLoading, isError } = useProduct(id);
+  const { data: categories } = useCategories();
+  const categoryId = product ? CATEGORY_HANDLE_TO_ID[product.category] : undefined;
+  const relatedQuery = useProductsByCategory(categoryId ?? "", 9);
   const { addItem } = useCart();
 
   const [mainImage, setMainImage] = useState(0);
@@ -45,10 +46,40 @@ function ProductPage() {
   const [tab, setTab] = useState<Tab>("desc");
   const [cep, setCep] = useState("");
 
-  const related = useMemo(
-    () => getProductsByCategory(product.category).filter((p) => p.id !== product.id).slice(0, 8),
-    [product],
+  const category = useMemo(
+    () => categories?.find((c) => c.slug === product?.category),
+    [categories, product?.category],
   );
+
+  const related = useMemo(
+    () => (relatedQuery.data ?? []).filter((p) => p.id !== product?.id).slice(0, 8),
+    [relatedQuery.data, product?.id],
+  );
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
+          <Skeleton className="h-4 w-64 mb-6 bg-bunker-graphite/60" />
+          <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-8 lg:gap-10">
+            <Skeleton className="aspect-square w-full bg-bunker-graphite/60" />
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-3 w-32 bg-bunker-graphite/60" />
+              <Skeleton className="h-10 w-full bg-bunker-graphite/60" />
+              <Skeleton className="h-24 w-full bg-bunker-graphite/60" />
+              <Skeleton className="h-10 w-40 bg-bunker-graphite/60" />
+              <Skeleton className="h-12 w-full bg-bunker-graphite/60" />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError || !product) {
+    throw notFound();
+  }
+
   const pixPrice = product.currentPrice * 0.95;
 
   return (
@@ -109,24 +140,26 @@ function ProductPage() {
             <h1 className="font-display text-3xl md:text-4xl uppercase tracking-wider leading-tight">
               {product.name}
             </h1>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={cn(
-                      "w-4 h-4",
-                      s <= Math.round(product.rating)
-                        ? "fill-bunker-tan text-bunker-tan"
-                        : "text-bunker-graphite",
-                    )}
-                  />
-                ))}
+            {false && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={cn(
+                        "w-4 h-4",
+                        s <= Math.round(product.rating)
+                          ? "fill-bunker-tan text-bunker-tan"
+                          : "text-bunker-graphite",
+                      )}
+                    />
+                  ))}
+                </div>
+                <span className="text-bunker-text-secondary">
+                  {product.rating.toFixed(1)} ({product.reviewsCount} avaliações)
+                </span>
               </div>
-              <span className="text-bunker-text-secondary">
-                {product.rating.toFixed(1)} ({product.reviewsCount} avaliações)
-              </span>
-            </div>
+            )}
 
             <div className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-5 mt-2">
               <PriceTag
@@ -222,8 +255,8 @@ function ProductPage() {
           <div className="flex gap-1 border-b border-bunker-graphite">
             {([
               ["desc", "Descrição"],
-              ["specs", "Especificações"],
-              ["reviews", "Avaliações"],
+              // ["specs", "Especificações"],
+              // ["reviews", "Avaliações"],
             ] as const).map(([k, l]) => (
               <button
                 key={k}
@@ -242,7 +275,7 @@ function ProductPage() {
           </div>
           <div className="py-6 text-bunker-text-secondary leading-relaxed">
             {tab === "desc" && <p className="max-w-3xl">{product.description}</p>}
-            {tab === "specs" && (
+            {false && tab === "specs" && (
               <table className="w-full max-w-2xl text-sm">
                 <tbody>
                   {Object.entries(product.specs).map(([k, v]) => (
@@ -254,7 +287,7 @@ function ProductPage() {
                 </tbody>
               </table>
             )}
-            {tab === "reviews" && (
+            {false && tab === "reviews" && (
               <div>
                 <p className="text-bunker-text-primary font-display text-2xl">
                   {product.rating.toFixed(1)} <span className="text-bunker-text-secondary text-sm">/ 5.0</span>
@@ -270,7 +303,12 @@ function ProductPage() {
         {related.length > 0 && (
           <div className="mt-12">
             <SectionTitle title="Produtos Relacionados" subtitle="Operadores que escolheram este também levaram" />
-            <ProductCarousel products={related} />
+            <ProductCarousel
+              products={related}
+              isLoading={relatedQuery.isLoading}
+              isError={relatedQuery.isError}
+              onRetry={() => void relatedQuery.refetch()}
+            />
           </div>
         )}
       </div>
