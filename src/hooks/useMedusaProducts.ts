@@ -29,6 +29,46 @@ type MedusaCategory = {
   handle: string;
 };
 
+const PRODUCT_DETAIL_FIELDS =
+  "id,title,handle,description,thumbnail,*images,*categories,*variants,*variants.calculated_price,*options";
+
+type MedusaProductDetail = MedusaProduct & {
+  images?: Array<{ url?: string | null }>;
+  options?: Array<{
+    id: string;
+    title: string;
+    values?: Array<{ id: string; value: string }>;
+  }>;
+  variants?: Array<{
+    id: string;
+    title?: string | null;
+    sku?: string | null;
+    calculated_price?: {
+      calculated_amount?: number;
+      original_amount?: number;
+    };
+  }>;
+};
+
+export type ProductVariantDetail = {
+  id: string;
+  sku: string;
+  title: string;
+  currentPrice: number;
+  originalPrice: number;
+};
+
+export type ProductOptionDetail = {
+  id: string;
+  title: string;
+  values: string[];
+};
+
+export type ProductDetail = Product & {
+  variants: ProductVariantDetail[];
+  options: ProductOptionDetail[];
+};
+
 const CATEGORY_ICON_BY_HANDLE: Record<string, Category["icon"]> = {
   airsoft: "Crosshair",
   pressao: "Target",
@@ -70,6 +110,40 @@ export function mapMedusaProduct(product: MedusaProduct): Product {
   };
 }
 
+function resolveProductImages(product: MedusaProductDetail): string[] {
+  const fromImages = (product.images ?? [])
+    .map((image) => image.url)
+    .filter((url): url is string => Boolean(url));
+
+  if (fromImages.length > 0) return fromImages;
+  if (product.thumbnail) return [product.thumbnail];
+  return [placeholderImage];
+}
+
+export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDetail {
+  const base = mapMedusaProduct(product);
+
+  return {
+    ...base,
+    images: resolveProductImages(product),
+    variants: (product.variants ?? []).map((variant) => ({
+      id: variant.id,
+      sku: variant.sku ?? "",
+      title: variant.title ?? "",
+      currentPrice: variant.calculated_price?.calculated_amount ?? 0,
+      originalPrice:
+        variant.calculated_price?.original_amount ??
+        variant.calculated_price?.calculated_amount ??
+        0,
+    })),
+    options: (product.options ?? []).map((option) => ({
+      id: option.id,
+      title: option.title,
+      values: (option.values ?? []).map((value) => value.value),
+    })),
+  };
+}
+
 function mapMedusaCategory(category: MedusaCategory): Category {
   return {
     slug: category.handle,
@@ -90,10 +164,20 @@ async function fetchProducts(options: { limit?: number; categoryId?: string }) {
   return (products as MedusaProduct[]).map(mapMedusaProduct);
 }
 
+async function fetchProduct(id: string) {
+  const { product } = await sdk.store.product.retrieve(id, {
+    region_id: BRAZIL_REGION_ID,
+    fields: PRODUCT_DETAIL_FIELDS,
+  });
+
+  return mapMedusaProductDetail(product as MedusaProductDetail);
+}
+
 export const medusaQueryKeys = {
   products: (limit?: number) => ["medusa", "products", { limit }] as const,
   productsByCategory: (categoryId: string, limit?: number) =>
     ["medusa", "products", "category", categoryId, { limit }] as const,
+  product: (id: string) => ["medusa", "products", "detail", id] as const,
   categories: () => ["medusa", "categories"] as const,
 };
 
@@ -109,6 +193,14 @@ export function useProductsByCategory(categoryId: string, limit = 8) {
     queryKey: medusaQueryKeys.productsByCategory(categoryId, limit),
     queryFn: () => fetchProducts({ limit, categoryId }),
     enabled: Boolean(categoryId),
+  });
+}
+
+export function useProduct(id: string) {
+  return useQuery({
+    queryKey: medusaQueryKeys.product(id),
+    queryFn: () => fetchProduct(id),
+    enabled: Boolean(id),
   });
 }
 
