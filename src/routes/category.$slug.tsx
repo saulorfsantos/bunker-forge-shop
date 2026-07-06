@@ -1,28 +1,46 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
-import { getCategoryBySlug, getProductsByCategory } from "@/data/mockData";
-import type { Product } from "@/types/product";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProductsByCategory } from "@/hooks/useMedusaProducts";
+import { sdk } from "@/lib/medusa";
+import type { Category, Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
+type MedusaCategoryByHandle = {
+  id: string;
+  name: string;
+  handle: string;
+};
+
+function useCategoryByHandle(slug: string) {
+  return useQuery({
+    queryKey: ["medusa", "categories", "handle", slug] as const,
+    queryFn: async () => {
+      const { product_categories } = await sdk.store.category.list({
+        handle: slug,
+        fields: "id,name,handle",
+      });
+
+      return (product_categories[0] as MedusaCategoryByHandle | undefined) ?? null;
+    },
+    enabled: Boolean(slug),
+  });
+}
+
 export const Route = createFileRoute("/category/$slug")({
-  beforeLoad: ({ params }) => {
-    if (!getCategoryBySlug(params.slug)) throw notFound();
-  },
-  head: ({ params }) => {
-    const cat = getCategoryBySlug(params.slug);
-    return {
-      meta: [
-        { title: `${cat?.name ?? "Categoria"} — Bunker 81 Airsoft` },
-        {
-          name: "description",
-          content: `Confira nossa linha de ${cat?.name ?? "produtos"} na Bunker 81 Airsoft. Equipamentos táticos com os melhores preços.`,
-        },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Categoria — Bunker 81 Airsoft" },
+      {
+        name: "description",
+        content: "Confira nossa linha de produtos na Bunker 81 Airsoft. Equipamentos táticos com os melhores preços.",
+      },
+    ],
+  }),
   component: CategoryPage,
 });
 
@@ -30,8 +48,10 @@ type SortKey = "relevance" | "price-asc" | "price-desc" | "newest";
 
 function CategoryPage() {
   const { slug } = Route.useParams();
-  const category = getCategoryBySlug(slug)!;
-  const allProducts = useMemo(() => getProductsByCategory(slug), [slug]);
+  const categoryQuery = useCategoryByHandle(slug);
+  const categoryId = categoryQuery.data?.id;
+  const productsQuery = useProductsByCategory(categoryId ?? "", 100);
+  const allProducts = productsQuery.data ?? [];
 
   const brands = useMemo(
     () => Array.from(new Set(allProducts.map((p) => p.brand))).sort(),
@@ -75,6 +95,38 @@ function CategoryPage() {
     setPriceMin(0);
     setPriceMax(maxPrice);
     setInStockOnly(false);
+  };
+
+  const isLoading = categoryQuery.isLoading || productsQuery.isLoading;
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
+          <Skeleton className="h-4 w-48 mb-4 bg-bunker-graphite/60" />
+          <Skeleton className="h-12 w-64 mb-6 bg-bunker-graphite/60" />
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8">
+            <Skeleton className="hidden lg:block h-96 bg-bunker-graphite/60 rounded-sm" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={`category-product-skeleton-${index}`} className="aspect-[3/4] bg-bunker-graphite/60 rounded-sm" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (categoryQuery.isError || !categoryQuery.data) {
+    throw notFound();
+  }
+
+  const category: Category = {
+    slug: categoryQuery.data.handle,
+    name: categoryQuery.data.name,
+    icon: "Crosshair",
+    subcategories: [],
   };
 
   const Filters = (
