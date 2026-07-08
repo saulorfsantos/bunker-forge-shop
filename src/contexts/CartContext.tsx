@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { CartItem, Product } from "@/types/product";
 import { getProductById } from "@/data/mockData";
+import { BRAZIL_REGION_ID, MEDUSA_CART_ID_KEY, sdk } from "@/lib/medusa";
 
 interface CartContextValue {
   items: CartItem[];
@@ -13,9 +14,16 @@ interface CartContextValue {
   getProduct: (productId: string) => Product | undefined;
 }
 
+/** Medusa cart payload kept internally until wired to the public API. */
+interface MedusaCartState {
+  id: string;
+  items?: unknown[];
+}
+
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "bunker81-cart";
+const MEDUSA_CART_FIELDS = "*items,*items.variant,*items.product";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -31,9 +39,54 @@ function readStoredItems(): CartItem[] {
   }
 }
 
+function readStoredMedusaCartId(): string | null {
+  if (!isBrowser) return null;
+  return window.localStorage.getItem(MEDUSA_CART_ID_KEY);
+}
+
+function saveMedusaCartId(cartId: string): void {
+  if (!isBrowser) return;
+  window.localStorage.setItem(MEDUSA_CART_ID_KEY, cartId);
+}
+
+function clearStoredMedusaCartId(): void {
+  if (!isBrowser) return;
+  window.localStorage.removeItem(MEDUSA_CART_ID_KEY);
+}
+
+async function getOrCreateCart(): Promise<MedusaCartState | null> {
+  if (!isBrowser) return null;
+
+  try {
+    const storedId = readStoredMedusaCartId();
+
+    if (storedId) {
+      try {
+        const { cart } = await sdk.store.cart.retrieve(storedId, {
+          fields: MEDUSA_CART_FIELDS,
+        });
+        return cart as MedusaCartState;
+      } catch {
+        clearStoredMedusaCartId();
+      }
+    }
+
+    const { cart } = await sdk.store.cart.create(
+      { region_id: BRAZIL_REGION_ID },
+      { fields: MEDUSA_CART_FIELDS },
+    );
+    saveMedusaCartId(cart.id);
+    return cart as MedusaCartState;
+  } catch (error) {
+    console.error("[CartContext] Failed to get or create Medusa cart:", error);
+    return null;
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [medusaCart, setMedusaCart] = useState<MedusaCartState | null>(null);
 
   useEffect(() => {
     setItems(readStoredItems());
@@ -44,6 +97,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!hydrated || !isBrowser) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+
+    void getOrCreateCart().then((cart) => {
+      if (!cart) return;
+      setMedusaCart(cart);
+      console.log("[CartContext] Medusa cart ready:", {
+        cart_id: cart.id,
+        items: cart.items ?? [],
+      });
+    });
+  }, []);
 
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);

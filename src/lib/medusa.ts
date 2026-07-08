@@ -28,3 +28,6 @@ export const MEDUSA_CATEGORY_IDS = {
 
 export const PRODUCT_LIST_FIELDS =
   "id,title,handle,thumbnail,description,*variants,*variants.calculated_price,*categories";
+
+/** localStorage key for the Medusa cart id (separate from mock cart items). */
+export const MEDUSA_CART_ID_KEY = "bunker81-medusa-cart-id";
