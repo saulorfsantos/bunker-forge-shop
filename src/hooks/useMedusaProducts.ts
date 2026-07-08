@@ -164,6 +164,17 @@ async function fetchProducts(options: { limit?: number; categoryId?: string }) {
   return (products as MedusaProduct[]).map(mapMedusaProduct);
 }
 
+async function fetchSearchProducts(query: string, limit = 50) {
+  const { products } = await sdk.store.product.list({
+    q: query,
+    limit,
+    region_id: BRAZIL_REGION_ID,
+    fields: PRODUCT_LIST_FIELDS,
+  });
+
+  return (products as MedusaProduct[]).map(mapMedusaProduct);
+}
+
 async function fetchProduct(id: string) {
   const { product } = await sdk.store.product.retrieve(id, {
     region_id: BRAZIL_REGION_ID,
@@ -178,6 +189,7 @@ export const medusaQueryKeys = {
   productsByCategory: (categoryId: string, limit?: number) =>
     ["medusa", "products", "category", categoryId, { limit }] as const,
   product: (id: string) => ["medusa", "products", "detail", id] as const,
+  search: (q: string) => ["medusa", "products", "search", q] as const,
   categories: () => ["medusa", "categories"] as const,
 };
 
@@ -201,6 +213,16 @@ export function useProduct(id: string) {
     queryKey: medusaQueryKeys.product(id),
     queryFn: () => fetchProduct(id),
     enabled: Boolean(id),
+  });
+}
+
+export function useSearchProducts(q: string, limit = 50) {
+  const trimmed = q.trim();
+
+  return useQuery({
+    queryKey: medusaQueryKeys.search(trimmed),
+    queryFn: () => fetchSearchProducts(trimmed, limit),
+    enabled: Boolean(trimmed),
   });
 }
 
