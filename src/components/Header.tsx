@@ -251,19 +251,24 @@ function SearchFormWithSuggestions({
     if (!dropdownOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        onCloseDropdown();
+      const target = event.target as Node;
+      const insideAutocomplete = (target as Element).closest?.("[data-search-autocomplete]");
+
+      if (containerRef.current?.contains(target) || insideAutocomplete) {
+        return;
       }
+
+      onCloseDropdown();
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [dropdownOpen, onCloseDropdown]);
 
   const showDropdown = dropdownOpen && Boolean(query.trim());
 
   return (
-    <div ref={containerRef} className={cn("relative", containerClassName)}>
+    <div ref={containerRef} data-search-autocomplete className={cn("relative", containerClassName)}>
       <form onSubmit={onSubmit} className={formClassName}>
         <input
           type="search"
@@ -280,7 +285,7 @@ function SearchFormWithSuggestions({
       </form>
 
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 z-[100] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl overflow-hidden">
           {isSearchLoading ? (
             <p className="px-4 py-3 text-sm text-bunker-text-secondary">Buscando...</p>
           ) : results.length === 0 ? (
@@ -293,12 +298,13 @@ function SearchFormWithSuggestions({
                     to="/product/$id"
                     params={{ id: product.id }}
                     onClick={onCloseDropdown}
-                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
+                    className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
                   >
                     <img
                       src={product.images[0]}
                       alt=""
-                      className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite"
+                      draggable={false}
+                      className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite pointer-events-none"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-bunker-text-primary line-clamp-1">{product.name}</p>
