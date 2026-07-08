@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown } from "lucide-react";
 import logoShield from "@/assets/logo-shield.png";
-import { categories } from "@/data/mockData";
+import { useCategories } from "@/hooks/useMedusaProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { cn } from "@/lib/utils";
 
 export function Header() {
   const navigate = useNavigate();
+  const { data: categories = [] } = useCategories();
   const { itemCount } = useCart();
   const { favorites } = useFavorites();
   const [query, setQuery] = useState("");
@@ -126,7 +127,7 @@ export function Header() {
               </Link>
               <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <ul className="py-2">
-                  {cat.subcategories.map((sub) => (
+                  {(cat.subcategories ?? []).map((sub) => (
                     <li key={sub.slug}>
                       <Link
                         to="/category/$slug"
