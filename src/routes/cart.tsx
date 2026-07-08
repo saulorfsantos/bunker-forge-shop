@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
 import { formatBRL } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -12,7 +13,34 @@ export const Route = createFileRoute("/cart")({
 });
 
 function CartPage() {
-  const { items, updateQuantity, removeItem, totalPrice, getProduct, clearCart } = useCart();
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    totalPrice,
+    getProduct,
+    clearCart,
+    isLoading,
+    isPending,
+  } = useCart();
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-[1400px] mx-auto px-4 py-8 md:py-12">
+          <Skeleton className="h-10 w-64 mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+            <div className="space-y-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full rounded-sm" />
+              ))}
+            </div>
+            <Skeleton className="h-64 w-full rounded-sm" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -74,8 +102,9 @@ function CartPage() {
                       <div className="flex items-center border border-bunker-graphite rounded-sm">
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite"
+                          disabled={isPending}
+                          onClick={() => void updateQuantity(item.productId, item.quantity - 1)}
+                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Diminuir"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -83,8 +112,9 @@ function CartPage() {
                         <span className="px-3 text-sm tabular-nums">{item.quantity}</span>
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite"
+                          disabled={isPending}
+                          onClick={() => void updateQuantity(item.productId, item.quantity + 1)}
+                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Aumentar"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -93,9 +123,10 @@ function CartPage() {
                       <p className="price-tag text-base">{formatBRL(p.currentPrice * item.quantity)}</p>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.productId)}
+                        disabled={isPending}
+                        onClick={() => void removeItem(item.productId)}
                         aria-label="Remover"
-                        className="text-bunker-text-secondary hover:text-bunker-danger transition-colors"
+                        className="text-bunker-text-secondary hover:text-bunker-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -107,8 +138,9 @@ function CartPage() {
 
             <button
               type="button"
-              onClick={clearCart}
-              className="text-xs uppercase tracking-wider text-bunker-text-secondary hover:text-bunker-danger"
+              disabled={isPending}
+              onClick={() => void clearCart()}
+              className="text-xs uppercase tracking-wider text-bunker-text-secondary hover:text-bunker-danger disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Esvaziar carrinho
             </button>

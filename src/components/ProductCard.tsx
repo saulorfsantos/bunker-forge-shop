@@ -17,7 +17,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { addItem } = useCart();
+  const { addItem, isPending } = useCart();
   const fav = isFavorite(product.id);
   const [imageSrc, setImageSrc] = useState(product.images[0] ?? placeholderImage);
 
@@ -89,11 +89,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
         <button
           type="button"
+          disabled={isPending}
           onClick={() => {
-            addItem(product.id, 1);
-            toast.success("Adicionado ao carrinho", { description: product.name });
+            void addItem(product.id, 1, product.defaultVariantId).then(() => {
+              toast.success("Adicionado ao carrinho", { description: product.name });
+            });
           }}
-          className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+          className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Comprar
         </button>

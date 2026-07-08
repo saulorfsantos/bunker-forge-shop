@@ -15,6 +15,7 @@ type MedusaProduct = {
   description?: string | null;
   categories?: Array<{ id: string; handle: string; name: string }>;
   variants?: Array<{
+    id: string;
     sku?: string | null;
     calculated_price?: {
       calculated_amount?: number;
@@ -90,6 +91,7 @@ export function mapMedusaProduct(product: MedusaProduct): Product {
     subcategory: "",
     brand: "Bunker 81",
     sku: variant?.sku ?? "",
+    defaultVariantId: variant?.id,
     images: product.thumbnail ? [product.thumbnail] : [placeholderImage],
     description: product.description ?? "",
     specs: {},

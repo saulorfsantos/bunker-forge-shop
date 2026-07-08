@@ -20,6 +20,8 @@ export interface Product {
   isPromo: boolean;
   rating: number;
   reviewsCount: number;
+  /** First variant id from Medusa — used by cart to skip an extra product retrieve. */
+  defaultVariantId?: string;
 }
 
 export interface Subcategory {

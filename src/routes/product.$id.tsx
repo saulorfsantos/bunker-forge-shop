@@ -39,7 +39,7 @@ function ProductPage() {
   const { data: categories } = useCategories();
   const categoryId = product ? CATEGORY_HANDLE_TO_ID[product.category] : undefined;
   const relatedQuery = useProductsByCategory(categoryId ?? "", 9);
-  const { addItem } = useCart();
+  const { addItem, isPending } = useCart();
 
   const [mainImage, setMainImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -204,18 +204,25 @@ function ProductPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
+                disabled={isPending}
                 onClick={() => {
-                  addItem(product.id, qty);
-                  toast.success("Adicionado ao carrinho", { description: `${qty}x ${product.name}` });
+                  void addItem(product.id, qty, product.variants[0]?.id).then(() => {
+                    toast.success("Adicionado ao carrinho", { description: `${qty}x ${product.name}` });
+                  });
                 }}
-                className="flex-1 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+                className="flex-1 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Adicionar ao Carrinho
               </button>
               <Link
                 to="/cart"
-                onClick={() => addItem(product.id, qty)}
-                className="flex-1 text-center border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan/10 transition-colors"
+                onClick={() => {
+                  void addItem(product.id, qty, product.variants[0]?.id);
+                }}
+                className={cn(
+                  "flex-1 text-center border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan/10 transition-colors",
+                  isPending && "pointer-events-none opacity-50",
+                )}
               >
                 Comprar Agora
               </Link>
