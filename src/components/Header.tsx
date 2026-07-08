@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown } from "lucide-react";
 import logoShield from "@/assets/logo-shield.png";
-import { useCategories } from "@/hooks/useMedusaProducts";
+import { useCategories, useSearchProducts } from "@/hooks/useMedusaProducts";
+import { formatBRL } from "@/data/mockData";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
+
+const SEARCH_DEBOUNCE_MS = 300;
+const AUTOCOMPLETE_LIMIT = 6;
 
 export function Header() {
   const navigate = useNavigate();
@@ -13,14 +18,43 @@ export function Header() {
   const { itemCount } = useCart();
   const { favorites } = useFavorites();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const { data: results = [], isLoading } = useSearchProducts(debouncedQuery, AUTOCOMPLETE_LIMIT);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setDropdownOpen(false);
+    }
+  }, [query]);
+
+  const isDebouncing = Boolean(query.trim()) && query.trim() !== debouncedQuery;
+  const isSearchLoading = isDebouncing || (Boolean(debouncedQuery) && isLoading);
+
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
+    setDropdownOpen(false);
     navigate({ to: "/search", search: { q } });
     setOpenMenu(false);
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (value.trim()) {
+      setDropdownOpen(true);
+    }
   };
 
   return (
@@ -36,23 +70,24 @@ export function Header() {
             </span>
           </Link>
 
-
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-auto hidden md:flex">
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Busque por rifles, coletes, lanternas..."
-              className="flex-1 bg-bunker-black border border-bunker-graphite rounded-l-sm px-4 py-2.5 text-sm text-bunker-text-primary placeholder:text-bunker-text-secondary focus:outline-none focus:border-bunker-tan"
-            />
-            <button
-              type="submit"
-              className="bg-bunker-tan text-bunker-black px-5 rounded-r-sm hover:bg-bunker-tan-dark transition-colors"
-              aria-label="Buscar"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </form>
+          <SearchFormWithSuggestions
+            query={query}
+            onQueryChange={handleQueryChange}
+            onSubmit={handleSearch}
+            onFocus={() => {
+              if (query.trim()) setDropdownOpen(true);
+            }}
+            dropdownOpen={dropdownOpen}
+            onCloseDropdown={() => setDropdownOpen(false)}
+            results={results}
+            isSearchLoading={isSearchLoading}
+            containerClassName="flex-1 max-w-2xl mx-auto hidden md:block"
+            formClassName="flex w-full"
+            inputClassName="flex-1 bg-bunker-black border border-bunker-graphite rounded-l-sm px-4 py-2.5 text-sm text-bunker-text-primary placeholder:text-bunker-text-secondary focus:outline-none focus:border-bunker-tan"
+            buttonClassName="bg-bunker-tan text-bunker-black px-5 rounded-r-sm hover:bg-bunker-tan-dark transition-colors"
+            placeholder="Busque por rifles, coletes, lanternas..."
+            iconClassName="w-5 h-5"
+          />
 
           <div className="flex items-center gap-1 md:gap-3 ml-auto">
             <button
@@ -98,18 +133,24 @@ export function Header() {
         </div>
 
         {/* Mobile search */}
-        <form onSubmit={handleSearch} className="md:hidden px-4 pb-3 flex">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar..."
-            className="flex-1 bg-bunker-black border border-bunker-graphite rounded-l-sm px-3 py-2 text-sm text-bunker-text-primary placeholder:text-bunker-text-secondary focus:outline-none focus:border-bunker-tan"
-          />
-          <button type="submit" className="bg-bunker-tan text-bunker-black px-4 rounded-r-sm" aria-label="Buscar">
-            <Search className="w-4 h-4" />
-          </button>
-        </form>
+        <SearchFormWithSuggestions
+          query={query}
+          onQueryChange={handleQueryChange}
+          onSubmit={handleSearch}
+          onFocus={() => {
+            if (query.trim()) setDropdownOpen(true);
+          }}
+          dropdownOpen={dropdownOpen}
+          onCloseDropdown={() => setDropdownOpen(false)}
+          results={results}
+          isSearchLoading={isSearchLoading}
+          containerClassName="md:hidden px-4 pb-3"
+          formClassName="flex w-full"
+          inputClassName="flex-1 bg-bunker-black border border-bunker-graphite rounded-l-sm px-3 py-2 text-sm text-bunker-text-primary placeholder:text-bunker-text-secondary focus:outline-none focus:border-bunker-tan"
+          buttonClassName="bg-bunker-tan text-bunker-black px-4 rounded-r-sm"
+          placeholder="Buscar..."
+          iconClassName="w-4 h-4"
+        />
       </div>
 
       {/* Category nav */}
@@ -168,5 +209,110 @@ export function Header() {
         </ul>
       </div>
     </header>
+  );
+}
+
+interface SearchFormWithSuggestionsProps {
+  query: string;
+  onQueryChange: (value: string) => void;
+  onSubmit: (e: FormEvent) => void;
+  onFocus: () => void;
+  dropdownOpen: boolean;
+  onCloseDropdown: () => void;
+  results: Product[];
+  isSearchLoading: boolean;
+  containerClassName: string;
+  formClassName: string;
+  inputClassName: string;
+  buttonClassName: string;
+  placeholder: string;
+  iconClassName: string;
+}
+
+function SearchFormWithSuggestions({
+  query,
+  onQueryChange,
+  onSubmit,
+  onFocus,
+  dropdownOpen,
+  onCloseDropdown,
+  results,
+  isSearchLoading,
+  containerClassName,
+  formClassName,
+  inputClassName,
+  buttonClassName,
+  placeholder,
+  iconClassName,
+}: SearchFormWithSuggestionsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        onCloseDropdown();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen, onCloseDropdown]);
+
+  const showDropdown = dropdownOpen && Boolean(query.trim());
+
+  return (
+    <div ref={containerRef} className={cn("relative", containerClassName)}>
+      <form onSubmit={onSubmit} className={formClassName}>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onFocus={onFocus}
+          placeholder={placeholder}
+          className={inputClassName}
+          autoComplete="off"
+        />
+        <button type="submit" className={buttonClassName} aria-label="Buscar">
+          <Search className={iconClassName} />
+        </button>
+      </form>
+
+      {showDropdown && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl overflow-hidden">
+          {isSearchLoading ? (
+            <p className="px-4 py-3 text-sm text-bunker-text-secondary">Buscando...</p>
+          ) : results.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-bunker-text-secondary">Nenhum produto encontrado</p>
+          ) : (
+            <ul>
+              {results.slice(0, AUTOCOMPLETE_LIMIT).map((product) => (
+                <li key={product.id}>
+                  <Link
+                    to="/product/$id"
+                    params={{ id: product.id }}
+                    onClick={onCloseDropdown}
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
+                  >
+                    <img
+                      src={product.images[0]}
+                      alt=""
+                      className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-bunker-text-primary line-clamp-1">{product.name}</p>
+                      <p className="text-xs text-bunker-tan tabular-nums mt-0.5">
+                        {formatBRL(product.currentPrice)}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
