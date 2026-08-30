@@ -1,4 +1,5 @@
 import { BRAZIL_REGION_ID, MEDUSA_CART_ID_KEY, sdk } from "@/lib/medusa";
+import { completeCheckoutAttempt, type CartPaymentState } from "@/lib/checkout-attempt";
 
 export const CHECKOUT_CONFIRMATION_KEY = "bunker81-last-order";
 
@@ -31,7 +32,7 @@ export interface CheckoutCart {
   tax_total?: number;
   total?: number;
   items?: CheckoutLineItem[];
-  payment_collection?: { id: string } | null;
+  payment_collection?: CartPaymentState["payment_collection"];
 }
 
 export interface ShippingOption {
@@ -57,7 +58,7 @@ export interface OrderReceipt {
 }
 
 const CART_FIELDS =
-  "id,email,region_id,currency_code,subtotal,shipping_total,tax_total,total,*items,*payment_collection";
+  "id,email,region_id,currency_code,subtotal,shipping_total,tax_total,total,*items,*payment_collection,*payment_collection.payment_sessions";
 const ORDER_FIELDS = "id,display_id,email,currency_code,total,created_at,status,*items";
 
 export function getActiveCartId(): string | null {
@@ -112,18 +113,24 @@ export async function listPaymentProviders(): Promise<PaymentProvider[]> {
   return payment_providers as PaymentProvider[];
 }
 
-export async function placeOrder(cart: CheckoutCart, providerId: string): Promise<OrderReceipt> {
-  await sdk.store.payment.initiatePaymentSession(
-    cart as Parameters<typeof sdk.store.payment.initiatePaymentSession>[0],
-    { provider_id: providerId },
-  );
+export async function placeOrder(cartId: string, providerId: string): Promise<OrderReceipt> {
+  return completeCheckoutAttempt(cartId, providerId, {
+    retrieveCart: retrieveCheckoutCart,
+    initiatePaymentSession: async (currentCart, selectedProviderId) => {
+      await sdk.store.payment.initiatePaymentSession(
+        currentCart as Parameters<typeof sdk.store.payment.initiatePaymentSession>[0],
+        { provider_id: selectedProviderId },
+      );
+    },
+    completeCart: async (currentCartId) => {
+      const result = await sdk.store.cart.complete(currentCartId, { fields: ORDER_FIELDS });
+      if (result.type === "cart") {
+        throw new Error(result.error?.message ?? "O backend não conseguiu concluir o pedido.");
+      }
 
-  const result = await sdk.store.cart.complete(cart.id, { fields: ORDER_FIELDS });
-  if (result.type === "cart") {
-    throw new Error(result.error?.message ?? "O backend não conseguiu concluir o pedido.");
-  }
-
-  return result.order as OrderReceipt;
+      return result.order as OrderReceipt;
+    },
+  });
 }
 
 export async function retrieveOrder(orderId: string): Promise<OrderReceipt> {
@@ -133,7 +140,11 @@ export async function retrieveOrder(orderId: string): Promise<OrderReceipt> {
 
 export function storeOrderReceipt(order: OrderReceipt): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(CHECKOUT_CONFIRMATION_KEY, JSON.stringify(order));
+  try {
+    window.sessionStorage.setItem(CHECKOUT_CONFIRMATION_KEY, JSON.stringify(order));
+  } catch {
+    // The order response remains authoritative even when browser storage is unavailable.
+  }
 }
 
 export function readStoredOrderReceipt(orderId: string): OrderReceipt | null {

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -14,6 +14,7 @@ import {
 import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
 import { formatBRL } from "@/data/mockData";
+import { createSubmissionLock } from "@/lib/checkout-attempt";
 import {
   getActiveCartId,
   listPaymentProviders,
@@ -77,6 +78,7 @@ function CheckoutPage() {
   const [isBooting, setIsBooting] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const orderSubmissionLock = useRef(createSubmissionLock());
 
   useEffect(() => {
     const cartId = getActiveCartId();
@@ -163,21 +165,34 @@ function CheckoutPage() {
   const submitOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!cart || !paymentProviderId) return;
+    if (!orderSubmissionLock.current.tryAcquire()) return;
 
     setError("");
     setIsSubmitting(true);
+    let order;
     try {
-      const order = await placeOrder(cart, paymentProviderId);
-      storeOrderReceipt(order);
-      markCartCompleted();
-      await navigate({
-        to: "/order-confirmation",
-        search: { order_id: order.id },
-      });
+      order = await placeOrder(cart.id, paymentProviderId);
     } catch (submitError: unknown) {
       setError(getErrorMessage(submitError));
-      setIsSubmitting(false);
+      try {
+        setCart(await retrieveCheckoutCart(cart.id));
+      } catch {
+        // Keep the last known cart visible and stored so the customer can retry or reload.
+      } finally {
+        orderSubmissionLock.current.release();
+        setIsSubmitting(false);
+      }
+      return;
     }
+
+    // A returned order is definitive: keep the lock held so a later UI/storage/navigation
+    // failure can never turn the same logical submission into another finalize attempt.
+    storeOrderReceipt(order);
+    markCartCompleted();
+    await navigate({
+      to: "/order-confirmation",
+      search: { order_id: order.id },
+    });
   };
 
   if (isBooting || isCartLoading) {
