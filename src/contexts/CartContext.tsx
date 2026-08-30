@@ -23,6 +23,7 @@ interface CartContextValue {
   removeItem: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  markCartCompleted: () => void;
   getProduct: (productId: string) => Product | undefined;
 }
 
@@ -135,10 +136,7 @@ function getProductFromCart(cart: MedusaCartState | null, productId: string): Pr
 function getTotalFromCart(cart: MedusaCartState | null): number {
   if (!cart) return 0;
   if (typeof cart.subtotal === "number") return cart.subtotal;
-  return (cart.items ?? []).reduce(
-    (sum, item) => sum + (item.unit_price ?? 0) * item.quantity,
-    0,
-  );
+  return (cart.items ?? []).reduce((sum, item) => sum + (item.unit_price ?? 0) * item.quantity, 0);
 }
 
 function findLineItemByProductId(
@@ -342,6 +340,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [isPending, refreshCart]);
 
+  const markCartCompleted = useCallback(() => {
+    clearStoredMedusaCartId();
+    medusaCartRef.current = null;
+    setMedusaCart(null);
+  }, []);
+
   const items = useMemo(() => mapCartToItems(medusaCart), [medusaCart]);
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const totalPrice = useMemo(() => getTotalFromCart(medusaCart), [medusaCart]);
@@ -362,9 +366,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       updateQuantity,
       clearCart,
+      markCartCompleted,
       getProduct,
     }),
-    [items, itemCount, totalPrice, isLoading, isPending, addItem, removeItem, updateQuantity, clearCart, getProduct],
+    [
+      items,
+      itemCount,
+      totalPrice,
+      isLoading,
+      isPending,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      markCartCompleted,
+      getProduct,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -62,9 +62,6 @@ function CartPage() {
     );
   }
 
-  const shipping = totalPrice >= 499 ? 0 : 49.9;
-  const grandTotal = totalPrice + shipping;
-
   return (
     <Layout>
       <div className="max-w-[1400px] mx-auto px-4 py-8 md:py-12">
@@ -120,7 +117,9 @@ function CartPage() {
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="price-tag text-base">{formatBRL(p.currentPrice * item.quantity)}</p>
+                      <p className="price-tag text-base">
+                        {formatBRL(p.currentPrice * item.quantity)}
+                      </p>
                       <button
                         type="button"
                         disabled={isPending}
@@ -148,7 +147,9 @@ function CartPage() {
 
           {/* Summary */}
           <aside className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-5 self-start lg:sticky lg:top-44">
-            <h2 className="font-display uppercase tracking-wider text-bunker-tan mb-4">Resumo do pedido</h2>
+            <h2 className="font-display uppercase tracking-wider text-bunker-tan mb-4">
+              Resumo do pedido
+            </h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-bunker-text-secondary">Subtotal</dt>
@@ -156,25 +157,22 @@ function CartPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-bunker-text-secondary">Frete</dt>
-                <dd className="tabular-nums">
-                  {shipping === 0 ? <span className="text-bunker-military-light">Grátis</span> : formatBRL(shipping)}
-                </dd>
+                <dd className="text-xs text-bunker-text-secondary">Calculado no checkout</dd>
               </div>
               <div className="border-t border-bunker-graphite pt-3 flex justify-between text-base">
-                <dt className="font-bold uppercase tracking-wider">Total</dt>
-                <dd className="price-tag text-xl">{formatBRL(grandTotal)}</dd>
+                <dt className="font-bold uppercase tracking-wider">Subtotal</dt>
+                <dd className="price-tag text-xl">{formatBRL(totalPrice)}</dd>
               </div>
               <p className="text-xs text-bunker-text-secondary">
-                ou 10x de <span className="tabular-nums">{formatBRL(grandTotal / 10)}</span> sem juros
+                O total final será confirmado após a seleção do frete e do provedor de pagamento.
               </p>
             </dl>
-            <button
-              type="button"
-              onClick={() => alert("Checkout será integrado em breve.")}
-              className="mt-5 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+            <Link
+              to="/checkout"
+              className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
             >
               Finalizar Compra
-            </button>
+            </Link>
             <Link
               to="/"
               className="mt-3 block text-center text-xs uppercase tracking-wider text-bunker-tan hover:underline"
