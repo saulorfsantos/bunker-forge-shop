@@ -89,14 +89,16 @@ export const brands: string[] = [
   "Guepardo",
 ];
 
-const img = (q: string) =>
-  `https://images.unsplash.com/${q}?auto=format&fit=crop&w=900&q=80`;
+const img = (q: string) => `https://images.unsplash.com/${q}?auto=format&fit=crop&w=900&q=80`;
 
 const calcDiscount = (original: number, current: number) =>
   Math.round(((original - current) / original) * 100);
 
 const mk = (
-  base: Omit<Product, "discountPercent" | "slug">,
+  base: Omit<
+    Product,
+    "discountPercent" | "slug" | "isAvailable" | "priceAvailable" | "requiresVariantSelection"
+  >,
 ): Product => ({
   ...base,
   slug: base.name
@@ -107,6 +109,9 @@ const mk = (
     .replace(/(^-|-$)/g, ""),
   discountPercent:
     base.currentPrice < base.price1 ? calcDiscount(base.price1, base.currentPrice) : 0,
+  isAvailable: base.stock === null || base.stock > 0,
+  priceAvailable: true,
+  requiresVariantSelection: false,
 });
 
 export const products: Product[] = [
@@ -379,7 +384,7 @@ export const products: Product[] = [
     description:
       "Lanterna tática de mão com 1200 lúmens reais, 5 modos de operação incluindo strobe defensivo. Bateria 18650 recarregável via USB-C, corpo em alumínio aeronáutico.",
     specs: {
-      "Lúmens": "1200",
+      Lúmens: "1200",
       Alcance: "300m",
       Modos: "5 (alto, médio, baixo, strobe, SOS)",
       Bateria: "18650 recarregável",
@@ -410,7 +415,7 @@ export const products: Product[] = [
       "Faca tática lâmina fixa em aço inox 440C com tratamento térmico, cabo em G10 antiderrapante. Bainha kydex com clip MOLLE para portar no colete ou cinto.",
     specs: {
       "Comprimento total": "30cm",
-      "Lâmina": "17cm aço 440C",
+      Lâmina: "17cm aço 440C",
       Cabo: "G10",
       Bainha: "Kydex com clip MOLLE",
       Peso: "320g",
@@ -495,7 +500,7 @@ export const products: Product[] = [
     description:
       "Lanterna de cabeça com 800 lúmens, foco ajustável e luz vermelha auxiliar para preservação da visão noturna. Bateria recarregável USB e ajuste elástico confortável.",
     specs: {
-      "Lúmens": "800",
+      Lúmens: "800",
       "Luz auxiliar": "Vermelha",
       Bateria: "Recarregável USB",
       Autonomia: "Até 8h",
@@ -596,9 +601,7 @@ export const getFeaturedProducts = (): Product[] =>
 export const getPromoProducts = (): Product[] => products.filter((p) => p.isPromo);
 
 export const getGearProducts = (): Product[] =>
-  products.filter((p) =>
-    ["acessorios-taticos", "cutelaria", "camping"].includes(p.category),
-  );
+  products.filter((p) => ["acessorios-taticos", "cutelaria", "camping"].includes(p.category));
 
 export const getCategoryBySlug = (slug: string): Category | undefined =>
   categories.find((c) => c.slug === slug);

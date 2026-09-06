@@ -62,9 +62,6 @@ function CartPage() {
     );
   }
 
-  const shipping = totalPrice >= 499 ? 0 : 49.9;
-  const grandTotal = totalPrice + shipping;
-
   return (
     <Layout>
       <div className="max-w-[1400px] mx-auto px-4 py-8 md:py-12">
@@ -75,11 +72,11 @@ function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
           <div className="space-y-3">
             {items.map((item) => {
-              const p = getProduct(item.productId);
+              const p = getProduct(item.id);
               if (!p) return null;
               return (
                 <div
-                  key={item.productId}
+                  key={item.id}
                   className="flex gap-4 bg-bunker-charcoal border border-bunker-graphite rounded-sm p-3 md:p-4"
                 >
                   <Link
@@ -98,12 +95,22 @@ function CartPage() {
                       {p.name}
                     </Link>
                     <p className="text-xs text-bunker-text-secondary mt-1">{p.brand}</p>
+                    {p.variantTitle && p.variantTitle.toLowerCase() !== "default variant" && (
+                      <p className="text-xs text-bunker-text-secondary mt-1">
+                        Variante: {p.variantTitle}
+                      </p>
+                    )}
+                    {p.sku && (
+                      <p className="text-[11px] uppercase tracking-wider text-bunker-text-secondary mt-1">
+                        SKU {p.sku}
+                      </p>
+                    )}
                     <div className="mt-auto flex items-center justify-between gap-3">
                       <div className="flex items-center border border-bunker-graphite rounded-sm">
                         <button
                           type="button"
                           disabled={isPending}
-                          onClick={() => void updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() => void updateQuantity(item.id, item.quantity - 1)}
                           className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Diminuir"
                         >
@@ -113,18 +120,22 @@ function CartPage() {
                         <button
                           type="button"
                           disabled={isPending}
-                          onClick={() => void updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => void updateQuantity(item.id, item.quantity + 1)}
                           className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Aumentar"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <p className="price-tag text-base">{formatBRL(p.currentPrice * item.quantity)}</p>
+                      <p className="price-tag text-base">
+                        {p.priceAvailable
+                          ? formatBRL(p.currentPrice * item.quantity)
+                          : "Preço indisponível"}
+                      </p>
                       <button
                         type="button"
                         disabled={isPending}
-                        onClick={() => void removeItem(item.productId)}
+                        onClick={() => void removeItem(item.id)}
                         aria-label="Remover"
                         className="text-bunker-text-secondary hover:text-bunker-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -148,24 +159,16 @@ function CartPage() {
 
           {/* Summary */}
           <aside className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-5 self-start lg:sticky lg:top-44">
-            <h2 className="font-display uppercase tracking-wider text-bunker-tan mb-4">Resumo do pedido</h2>
+            <h2 className="font-display uppercase tracking-wider text-bunker-tan mb-4">
+              Resumo do pedido
+            </h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-bunker-text-secondary">Subtotal</dt>
+                <dt className="text-bunker-text-secondary">Total dos produtos</dt>
                 <dd className="tabular-nums">{formatBRL(totalPrice)}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-bunker-text-secondary">Frete</dt>
-                <dd className="tabular-nums">
-                  {shipping === 0 ? <span className="text-bunker-military-light">Grátis</span> : formatBRL(shipping)}
-                </dd>
-              </div>
-              <div className="border-t border-bunker-graphite pt-3 flex justify-between text-base">
-                <dt className="font-bold uppercase tracking-wider">Total</dt>
-                <dd className="price-tag text-xl">{formatBRL(grandTotal)}</dd>
-              </div>
               <p className="text-xs text-bunker-text-secondary">
-                ou 10x de <span className="tabular-nums">{formatBRL(grandTotal / 10)}</span> sem juros
+                Frete e condições de pagamento não estão incluídos nesta prévia.
               </p>
             </dl>
             <button

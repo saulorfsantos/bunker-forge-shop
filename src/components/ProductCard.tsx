@@ -20,6 +20,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem, isPending } = useCart();
   const fav = isFavorite(product.id);
   const [imageSrc, setImageSrc] = useState(product.images[0] ?? placeholderImage);
+  const canAddDirectly = Boolean(
+    product.defaultVariantId && product.isAvailable && product.priceAvailable,
+  );
 
   return (
     <article
@@ -47,6 +50,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           )}
           {product.isPromo && <BunkerBadge variant="promo">Promo</BunkerBadge>}
           {product.isNew && <BunkerBadge variant="new">Novo</BunkerBadge>}
+          {!product.isAvailable && <BunkerBadge variant="danger">Indisponível</BunkerBadge>}
         </div>
       </Link>
 
@@ -80,25 +84,46 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </Link>
 
         <div className="mt-auto pt-2">
-          <PriceTag
-            price={product.currentPrice}
-            originalPrice={product.discountPercent > 0 ? product.price1 : undefined}
-            size="md"
-          />
+          {product.priceAvailable ? (
+            <PriceTag
+              price={product.currentPrice}
+              originalPrice={product.discountPercent > 0 ? product.price1 : undefined}
+              prefix={product.requiresVariantSelection ? "A partir de" : undefined}
+              size="md"
+            />
+          ) : (
+            <p className="text-sm font-semibold text-bunker-text-secondary">Preço indisponível</p>
+          )}
         </div>
 
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => {
-            void addItem(product.id, 1, product.defaultVariantId).then(() => {
-              toast.success("Adicionado ao carrinho", { description: product.name });
-            });
-          }}
-          className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Comprar
-        </button>
+        {product.requiresVariantSelection && product.isAvailable && product.priceAvailable ? (
+          <Link
+            to="/product/$id"
+            params={{ id: product.id }}
+            className="mt-2 w-full text-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+          >
+            Escolher variante
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled={isPending || !canAddDirectly}
+            onClick={() => {
+              if (!product.defaultVariantId) return;
+              void addItem(product.defaultVariantId).then(
+                () => toast.success("Adicionado ao carrinho", { description: product.name }),
+                () => undefined,
+              );
+            }}
+            className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {!product.priceAvailable
+              ? "Preço indisponível"
+              : product.isAvailable
+                ? "Comprar"
+                : "Indisponível"}
+          </button>
+        )}
       </div>
     </article>
   );

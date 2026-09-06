@@ -19,11 +19,11 @@ interface CartContextValue {
   totalPrice: number;
   isLoading: boolean;
   isPending: boolean;
-  addItem: (productId: string, quantity?: number, variantId?: string) => Promise<void>;
-  removeItem: (productId: string) => Promise<void>;
-  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  addItem: (variantId: string, quantity?: number) => Promise<void>;
+  removeItem: (lineItemId: string) => Promise<void>;
+  updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
-  getProduct: (productId: string) => Product | undefined;
+  getProduct: (lineItemId: string) => Product | undefined;
 }
 
 type MedusaLineItem = {
@@ -41,6 +41,8 @@ type MedusaLineItem = {
     thumbnail?: string | null;
   };
   variant?: {
+    id?: string;
+    title?: string | null;
     sku?: string | null;
   };
 };
@@ -55,7 +57,6 @@ const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const MOCK_STORAGE_KEY = "bunker81-cart";
 const MEDUSA_CART_FIELDS = "*items,*items.variant,*items.product";
-const PRODUCT_VARIANT_FIELDS = "*variants";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -88,9 +89,11 @@ function isCartNotFoundError(error: unknown): boolean {
 function mapCartToItems(cart: MedusaCartState | null): CartItem[] {
   if (!cart?.items?.length) return [];
   return cart.items
-    .filter((lineItem) => Boolean(lineItem.product_id))
+    .filter((lineItem) => Boolean(lineItem.product_id && lineItem.variant_id))
     .map((lineItem) => ({
+      id: lineItem.id,
       productId: lineItem.product_id!,
+      variantId: lineItem.variant_id!,
       quantity: lineItem.quantity,
     }));
 }
@@ -100,7 +103,8 @@ function mapLineItemToProduct(lineItem: MedusaLineItem): Product {
   const name = lineItem.title ?? lineItem.product?.title ?? "Produto";
   const slug = lineItem.product?.handle ?? "";
   const thumbnail = lineItem.thumbnail ?? lineItem.product?.thumbnail ?? null;
-  const unitPrice = lineItem.unit_price ?? 0;
+  const priceAvailable = typeof lineItem.unit_price === "number";
+  const unitPrice = priceAvailable ? lineItem.unit_price! : 0;
 
   return {
     id: productId,
@@ -120,32 +124,34 @@ function mapLineItemToProduct(lineItem: MedusaLineItem): Product {
     currentPrice: unitPrice,
     discountPercent: 0,
     stock: 0,
+    isAvailable: true,
+    priceAvailable,
+    requiresVariantSelection: false,
     isNew: false,
     isPromo: false,
     rating: 0,
     reviewsCount: 0,
+    defaultVariantId: lineItem.variant_id,
+    variantTitle: lineItem.variant?.title ?? "",
   };
 }
 
-function getProductFromCart(cart: MedusaCartState | null, productId: string): Product | undefined {
-  const lineItem = cart?.items?.find((item) => item.product_id === productId);
+function getProductFromCart(cart: MedusaCartState | null, lineItemId: string): Product | undefined {
+  const lineItem = cart?.items?.find((item) => item.id === lineItemId);
   return lineItem ? mapLineItemToProduct(lineItem) : undefined;
 }
 
 function getTotalFromCart(cart: MedusaCartState | null): number {
   if (!cart) return 0;
   if (typeof cart.subtotal === "number") return cart.subtotal;
-  return (cart.items ?? []).reduce(
-    (sum, item) => sum + (item.unit_price ?? 0) * item.quantity,
-    0,
-  );
+  return (cart.items ?? []).reduce((sum, item) => sum + (item.unit_price ?? 0) * item.quantity, 0);
 }
 
-function findLineItemByProductId(
+function findLineItemById(
   cart: MedusaCartState | null,
-  productId: string,
+  lineItemId: string,
 ): MedusaLineItem | undefined {
-  return cart?.items?.find((item) => item.product_id === productId);
+  return cart?.items?.find((item) => item.id === lineItemId);
 }
 
 async function fetchOrCreateCart(): Promise<MedusaCartState> {
@@ -169,19 +175,6 @@ async function fetchOrCreateCart(): Promise<MedusaCartState> {
   );
   saveMedusaCartId(cart.id);
   return cart as MedusaCartState;
-}
-
-async function resolveVariantId(productId: string): Promise<string> {
-  const { product } = await sdk.store.product.retrieve(productId, {
-    fields: PRODUCT_VARIANT_FIELDS,
-    region_id: BRAZIL_REGION_ID,
-  });
-
-  const variantId = product.variants?.[0]?.id;
-  if (!variantId) {
-    throw new Error("Produto sem variante disponível.");
-  }
-  return variantId;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -239,17 +232,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addItem = useCallback(
-    async (productId: string, quantity = 1, variantId?: string) => {
+    async (variantId: string, quantity = 1) => {
       if (isPending) return;
+      if (!variantId) {
+        toast.error("Selecione uma variante antes de adicionar ao carrinho.");
+        throw new Error("Variant id is required to add a cart line item.");
+      }
       setIsPending(true);
 
       try {
-        const resolvedVariantId = variantId ?? (await resolveVariantId(productId));
-
         await withCartRecovery(async (cartId) => {
           const { cart } = await sdk.store.cart.createLineItem(
             cartId,
-            { variant_id: resolvedVariantId, quantity },
+            { variant_id: variantId, quantity },
             { fields: MEDUSA_CART_FIELDS },
           );
           setMedusaCart(cart as MedusaCartState);
@@ -266,9 +261,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeItem = useCallback(
-    async (productId: string) => {
+    async (lineItemId: string) => {
       if (isPending) return;
-      const lineItem = findLineItemByProductId(medusaCartRef.current, productId);
+      const lineItem = findLineItemById(medusaCartRef.current, lineItemId);
       if (!lineItem) return;
 
       setIsPending(true);
@@ -291,9 +286,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    async (productId: string, quantity: number) => {
+    async (lineItemId: string, quantity: number) => {
       if (isPending) return;
-      const lineItem = findLineItemByProductId(medusaCartRef.current, productId);
+      const lineItem = findLineItemById(medusaCartRef.current, lineItemId);
       if (!lineItem) return;
 
       setIsPending(true);
@@ -347,7 +342,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalPrice = useMemo(() => getTotalFromCart(medusaCart), [medusaCart]);
 
   const getProduct = useCallback(
-    (productId: string) => getProductFromCart(medusaCart, productId),
+    (lineItemId: string) => getProductFromCart(medusaCart, lineItemId),
     [medusaCart],
   );
 
@@ -364,7 +359,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       getProduct,
     }),
-    [items, itemCount, totalPrice, isLoading, isPending, addItem, removeItem, updateQuantity, clearCart, getProduct],
+    [
+      items,
+      itemCount,
+      totalPrice,
+      isLoading,
+      isPending,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      getProduct,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -1,15 +1,20 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ChevronRight, Minus, Plus, ShieldCheck, Package, Award, Star } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Minus, Plus } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { PriceTag } from "@/components/PriceTag";
 import { BunkerBadge } from "@/components/BunkerBadge";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { SectionTitle } from "@/components/SectionTitle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatBRL } from "@/data/mockData";
-import { useProduct, useProductsByCategory, useCategories } from "@/hooks/useMedusaProducts";
+import {
+  useProduct,
+  useProductsByCategory,
+  useCategories,
+  type ProductVariantDetail,
+} from "@/hooks/useMedusaProducts";
 import { MEDUSA_CATEGORY_IDS } from "@/lib/medusa";
+import { resolveSelectedVariant } from "@/lib/catalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -35,6 +40,7 @@ type Tab = "desc" | "specs" | "reviews";
 
 function ProductPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const { data: product, isLoading, isError } = useProduct(id);
   const { data: categories } = useCategories();
   const categoryId = product ? CATEGORY_HANDLE_TO_ID[product.category] : undefined;
@@ -44,7 +50,13 @@ function ProductPage() {
   const [mainImage, setMainImage] = useState(0);
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<Tab>("desc");
-  const [cep, setCep] = useState("");
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMainImage(0);
+    setQty(1);
+    setSelectedVariantId(null);
+  }, [id]);
 
   const category = useMemo(
     () => categories?.find((c) => c.slug === product?.category),
@@ -80,17 +92,58 @@ function ProductPage() {
     throw notFound();
   }
 
-  const pixPrice = product.currentPrice * 0.95;
+  const selectedVariant = resolveSelectedVariant(product.variants, selectedVariantId);
+  const displayedPrice = selectedVariant?.currentPrice ?? product.currentPrice;
+  const displayedOriginalPrice = selectedVariant?.originalPrice ?? product.price1;
+  const priceAvailable = selectedVariant?.priceAvailable ?? product.priceAvailable;
+  const discountPercent =
+    priceAvailable && displayedOriginalPrice > displayedPrice
+      ? Math.round(((displayedOriginalPrice - displayedPrice) / displayedOriginalPrice) * 100)
+      : 0;
+  const isPromo = discountPercent > 0;
+  const canPurchase = Boolean(selectedVariant?.isAvailable && selectedVariant.priceAvailable);
+  const maxQuantity =
+    selectedVariant?.stock !== null && !selectedVariant?.allowBackorder
+      ? selectedVariant?.stock
+      : undefined;
+  const availabilityLabel = getAvailabilityLabel(selectedVariant, product.variants.length > 1);
+
+  const handleAddToCart = async (goToCart: boolean) => {
+    if (!selectedVariant) {
+      toast.error("Selecione uma variante antes de continuar.");
+      return;
+    }
+
+    if (!canPurchase) return;
+
+    try {
+      await addItem(selectedVariant.id, qty);
+      toast.success("Adicionado ao carrinho", {
+        description: `${qty}x ${product.name} — ${getVariantLabel(selectedVariant, 0)}`,
+      });
+      if (goToCart) {
+        await navigate({ to: "/cart" });
+      }
+    } catch {
+      // CartContext presents the actionable error to the customer.
+    }
+  };
 
   return (
     <Layout>
       <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
         <nav className="flex items-center gap-1 text-xs text-bunker-text-secondary mb-6 flex-wrap">
-          <Link to="/" className="hover:text-bunker-tan">Home</Link>
+          <Link to="/" className="hover:text-bunker-tan">
+            Home
+          </Link>
           <ChevronRight className="w-3 h-3" />
           {category && (
             <>
-              <Link to="/category/$slug" params={{ slug: category.slug }} className="hover:text-bunker-tan uppercase tracking-wider">
+              <Link
+                to="/category/$slug"
+                params={{ slug: category.slug }}
+                className="hover:text-bunker-tan uppercase tracking-wider"
+              >
                 {category.name}
               </Link>
               <ChevronRight className="w-3 h-3" />
@@ -110,7 +163,9 @@ function ProductPage() {
                   onClick={() => setMainImage(i)}
                   className={cn(
                     "shrink-0 w-16 h-16 md:w-20 md:h-20 bg-bunker-black border rounded-sm overflow-hidden transition-colors",
-                    i === mainImage ? "border-bunker-tan" : "border-bunker-graphite hover:border-bunker-tan-dark",
+                    i === mainImage
+                      ? "border-bunker-tan"
+                      : "border-bunker-graphite hover:border-bunker-tan-dark",
                   )}
                   aria-label={`Imagem ${i + 1}`}
                 >
@@ -125,9 +180,14 @@ function ProductPage() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                {product.discountPercent >= 10 && <BunkerBadge variant="danger">-{product.discountPercent}%</BunkerBadge>}
-                {product.isPromo && <BunkerBadge variant="promo">Promo</BunkerBadge>}
+                {discountPercent >= 10 && (
+                  <BunkerBadge variant="danger">-{discountPercent}%</BunkerBadge>
+                )}
+                {isPromo && <BunkerBadge variant="promo">Promo</BunkerBadge>}
                 {product.isNew && <BunkerBadge variant="new">Novo</BunkerBadge>}
+                {selectedVariant && !selectedVariant.isAvailable && (
+                  <BunkerBadge variant="danger">Indisponível</BunkerBadge>
+                )}
               </div>
             </div>
           </div>
@@ -135,53 +195,77 @@ function ProductPage() {
           {/* Info */}
           <div className="flex flex-col gap-4">
             <p className="text-xs uppercase tracking-widest text-bunker-text-secondary">
-              {product.brand} · SKU {product.sku}
+              {product.brand}
+              {selectedVariant?.sku
+                ? ` · SKU ${selectedVariant.sku}`
+                : product.variants.length > 1
+                  ? " · Selecione uma variante para consultar o SKU"
+                  : " · SKU não informado"}
             </p>
             <h1 className="font-display text-3xl md:text-4xl uppercase tracking-wider leading-tight">
               {product.name}
             </h1>
-            {false && (
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
+            {product.variants.length > 1 && (
+              <fieldset className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-4">
+                <legend className="px-1 text-xs uppercase font-bold tracking-wider text-bunker-text-primary">
+                  Escolha a variante
+                </legend>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  {product.variants.map((variant, index) => (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      aria-pressed={selectedVariantId === variant.id}
+                      onClick={() => {
+                        setSelectedVariantId(variant.id);
+                        setQty(1);
+                      }}
                       className={cn(
-                        "w-4 h-4",
-                        s <= Math.round(product.rating)
-                          ? "fill-bunker-tan text-bunker-tan"
-                          : "text-bunker-graphite",
+                        "rounded-sm border px-3 py-2.5 text-left transition-colors",
+                        selectedVariantId === variant.id
+                          ? "border-bunker-tan bg-bunker-tan/10"
+                          : "border-bunker-graphite hover:border-bunker-tan-dark",
+                        (!variant.isAvailable || !variant.priceAvailable) && "opacity-60",
                       )}
-                    />
+                    >
+                      <span className="block text-sm font-semibold text-bunker-text-primary">
+                        {getVariantLabel(variant, index)}
+                      </span>
+                      <span className="block text-xs text-bunker-text-secondary mt-1">
+                        {!variant.priceAvailable
+                          ? "Preço indisponível"
+                          : getAvailabilityLabel(variant, false)}
+                      </span>
+                    </button>
                   ))}
                 </div>
-                <span className="text-bunker-text-secondary">
-                  {product.rating.toFixed(1)} ({product.reviewsCount} avaliações)
-                </span>
-              </div>
+              </fieldset>
             )}
 
             <div className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-5 mt-2">
-              <PriceTag
-                price={product.currentPrice}
-                originalPrice={product.discountPercent > 0 ? product.price1 : undefined}
-                size="lg"
-                showInstallments={false}
-              />
-              <p className="mt-2 text-bunker-military-light text-sm font-semibold">
-                {formatBRL(pixPrice)} à vista no PIX (5% OFF)
-              </p>
-              <p className="text-bunker-text-secondary text-sm mt-1">
-                ou em até 10x de <span className="tabular-nums">{formatBRL(product.currentPrice / 10)}</span> sem juros
-              </p>
+              {priceAvailable ? (
+                <PriceTag
+                  price={displayedPrice}
+                  originalPrice={discountPercent > 0 ? displayedOriginalPrice : undefined}
+                  prefix={
+                    !selectedVariant && product.variants.length > 1 ? "A partir de" : undefined
+                  }
+                  size="lg"
+                />
+              ) : (
+                <p className="text-lg font-semibold text-bunker-text-secondary">
+                  Preço indisponível
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
               <div className="flex items-center border border-bunker-graphite rounded-sm">
                 <button
                   type="button"
+                  disabled={!canPurchase}
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite"
+                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Diminuir"
                 >
                   <Minus className="w-4 h-4" />
@@ -189,70 +273,43 @@ function ProductPage() {
                 <span className="px-4 tabular-nums w-10 text-center">{qty}</span>
                 <button
                   type="button"
+                  disabled={!canPurchase || (maxQuantity !== undefined && qty >= maxQuantity)}
                   onClick={() => setQty((q) => q + 1)}
-                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite"
+                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Aumentar"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <span className="text-xs text-bunker-text-secondary">
-                {product.stock > 0 ? `${product.stock} em estoque` : "Sob encomenda"}
-              </span>
+              <span className="text-xs text-bunker-text-secondary">{availabilityLabel}</span>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
-                disabled={isPending}
-                onClick={() => {
-                  void addItem(product.id, qty, product.variants[0]?.id).then(() => {
-                    toast.success("Adicionado ao carrinho", { description: `${qty}x ${product.name}` });
-                  });
-                }}
+                disabled={isPending || !canPurchase}
+                onClick={() => void handleAddToCart(false)}
                 className="flex-1 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Adicionar ao Carrinho
+                {!selectedVariant && product.variants.length > 1
+                  ? "Selecione uma variante"
+                  : !selectedVariant?.isAvailable
+                    ? "Indisponível"
+                    : !selectedVariant.priceAvailable
+                      ? "Preço indisponível"
+                      : "Adicionar ao Carrinho"}
               </button>
-              <Link
-                to="/cart"
-                onClick={() => {
-                  void addItem(product.id, qty, product.variants[0]?.id);
-                }}
+              <button
+                type="button"
+                disabled={isPending || !canPurchase}
+                onClick={() => void handleAddToCart(true)}
                 className={cn(
                   "flex-1 text-center border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan/10 transition-colors",
-                  isPending && "pointer-events-none opacity-50",
+                  (isPending || !canPurchase) && "cursor-not-allowed opacity-50",
                 )}
               >
                 Comprar Agora
-              </Link>
-            </div>
-
-            <div className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-4">
-              <p className="text-xs uppercase font-bold tracking-wider mb-2 text-bunker-text-primary">Calcular frete</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value)}
-                  placeholder="00000-000"
-                  className="flex-1 bg-bunker-black border border-bunker-graphite rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-bunker-tan"
-                  aria-label="CEP"
-                />
-                <button
-                  type="button"
-                  onClick={() => toast.info("Cálculo de frete será integrado em breve.")}
-                  className="bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs px-4 rounded-sm hover:bg-bunker-tan-dark transition-colors"
-                >
-                  Calcular
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <Seal icon={<ShieldCheck className="w-5 h-5" />} label="Compra Segura" />
-              <Seal icon={<Award className="w-5 h-5" />} label="Produto Original" />
-              <Seal icon={<Package className="w-5 h-5" />} label="Garantia" />
+              </button>
             </div>
           </div>
         </div>
@@ -260,11 +317,13 @@ function ProductPage() {
         {/* Tabs */}
         <div className="mt-12 border-t border-bunker-graphite">
           <div className="flex gap-1 border-b border-bunker-graphite">
-            {([
-              ["desc", "Descrição"],
-              // ["specs", "Especificações"],
-              // ["reviews", "Avaliações"],
-            ] as const).map(([k, l]) => (
+            {(
+              [
+                ["desc", "Descrição"],
+                // ["specs", "Especificações"],
+                // ["reviews", "Avaliações"],
+              ] as const
+            ).map(([k, l]) => (
               <button
                 key={k}
                 type="button"
@@ -282,34 +341,16 @@ function ProductPage() {
           </div>
           <div className="py-6 text-bunker-text-secondary leading-relaxed">
             {tab === "desc" && <p className="max-w-3xl">{product.description}</p>}
-            {false && tab === "specs" && (
-              <table className="w-full max-w-2xl text-sm">
-                <tbody>
-                  {Object.entries(product.specs).map(([k, v]) => (
-                    <tr key={k} className="border-b border-bunker-graphite">
-                      <td className="py-2 pr-4 text-bunker-text-primary font-semibold w-1/3">{k}</td>
-                      <td className="py-2">{v}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            {false && tab === "reviews" && (
-              <div>
-                <p className="text-bunker-text-primary font-display text-2xl">
-                  {product.rating.toFixed(1)} <span className="text-bunker-text-secondary text-sm">/ 5.0</span>
-                </p>
-                <p className="text-sm">Baseado em {product.reviewsCount} avaliações verificadas.</p>
-                <p className="mt-3 text-sm">Sistema de reviews completo será integrado com o backend em breve.</p>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Related */}
         {related.length > 0 && (
           <div className="mt-12">
-            <SectionTitle title="Produtos Relacionados" subtitle="Operadores que escolheram este também levaram" />
+            <SectionTitle
+              title="Produtos Relacionados"
+              subtitle="Operadores que escolheram este também levaram"
+            />
             <ProductCarousel
               products={related}
               isLoading={relatedQuery.isLoading}
@@ -323,11 +364,26 @@ function ProductPage() {
   );
 }
 
-function Seal({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1 bg-bunker-charcoal border border-bunker-graphite rounded-sm py-3 px-2 text-center">
-      <span className="text-bunker-military-light">{icon}</span>
-      <span className="text-[10px] uppercase tracking-wider text-bunker-text-secondary leading-tight">{label}</span>
-    </div>
-  );
+function getVariantLabel(variant: ProductVariantDetail, index: number): string {
+  const normalizedTitle = variant.title.trim().toLowerCase();
+  if (normalizedTitle && normalizedTitle !== "default variant") return variant.title;
+  if (variant.sku) return variant.sku;
+  return `Variante ${index + 1}`;
+}
+
+function getAvailabilityLabel(
+  variant: ProductVariantDetail | undefined,
+  requiresSelection: boolean,
+): string {
+  if (!variant) {
+    return requiresSelection
+      ? "Selecione uma variante para consultar a disponibilidade"
+      : "Indisponível";
+  }
+  if (!variant.isAvailable) return "Indisponível";
+  if (variant.stock !== null && variant.stock > 0) {
+    return `${variant.stock} em estoque`;
+  }
+  if (variant.allowBackorder) return "Disponível para encomenda";
+  return "Disponível";
 }

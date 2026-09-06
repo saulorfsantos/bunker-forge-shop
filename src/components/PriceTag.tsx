@@ -5,19 +5,12 @@ interface PriceTagProps {
   price: number;
   originalPrice?: number;
   size?: "sm" | "md" | "lg";
-  showInstallments?: boolean;
+  prefix?: string;
   className?: string;
 }
 
-export function PriceTag({
-  price,
-  originalPrice,
-  size = "md",
-  showInstallments = true,
-  className,
-}: PriceTagProps) {
+export function PriceTag({ price, originalPrice, size = "md", prefix, className }: PriceTagProps) {
   const showOriginal = originalPrice && originalPrice > price;
-  const installment = price / 10;
 
   const priceClass = {
     sm: "text-base",
@@ -27,17 +20,17 @@ export function PriceTag({
 
   return (
     <div className={cn("flex flex-col", className)}>
+      {prefix && (
+        <span className="text-bunker-text-secondary text-[11px] uppercase tracking-wider mb-1">
+          {prefix}
+        </span>
+      )}
       {showOriginal && (
         <span className="text-bunker-text-secondary text-xs line-through tabular-nums">
           {formatBRL(originalPrice!)}
         </span>
       )}
       <span className={cn("price-tag leading-none", priceClass)}>{formatBRL(price)}</span>
-      {showInstallments && (
-        <span className="text-bunker-text-secondary text-[11px] md:text-xs mt-1">
-          ou 10x de <span className="tabular-nums">{formatBRL(installment)}</span> sem juros
-        </span>
-      )}
     </div>
   );
 }

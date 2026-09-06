@@ -15,13 +15,17 @@ export interface Product {
   price3: number;
   currentPrice: number;
   discountPercent: number;
-  stock: number;
+  stock: number | null;
+  isAvailable: boolean;
+  priceAvailable: boolean;
+  requiresVariantSelection: boolean;
   isNew: boolean;
   isPromo: boolean;
   rating: number;
   reviewsCount: number;
-  /** First variant id from Medusa — used by cart to skip an extra product retrieve. */
+  /** Set only when the product has exactly one purchasable variant. */
   defaultVariantId?: string;
+  variantTitle?: string;
 }
 
 export interface Subcategory {
@@ -37,6 +41,8 @@ export interface Category {
 }
 
 export interface CartItem {
+  id: string;
   productId: string;
+  variantId: string;
   quantity: number;
 }
