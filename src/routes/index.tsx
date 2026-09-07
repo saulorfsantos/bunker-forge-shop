@@ -4,10 +4,7 @@ import { SectionTitle } from "@/components/SectionTitle";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useCategories,
-  useProductsByCategory,
-} from "@/hooks/useMedusaProducts";
+import { useCategories, useProductsByCategory } from "@/hooks/useMedusaProducts";
 import { MEDUSA_CATEGORY_IDS } from "@/lib/medusa";
 import heroBg from "@/assets/hero-bg.jpg";
 import bunkerBg from "@/assets/background-header.jpg";
@@ -32,10 +29,7 @@ function Home() {
   const gearQuery = useProductsByCategory(MEDUSA_CATEGORY_IDS.ACESSORIOS, 8);
   const categoriesQuery = useCategories();
 
-  const featuredProducts = [
-    ...(airsoftQuery.data ?? []),
-    ...(pressaoQuery.data ?? []),
-  ];
+  const featuredProducts = [...(airsoftQuery.data ?? []), ...(pressaoQuery.data ?? [])];
   const featuredLoading = airsoftQuery.isLoading || pressaoQuery.isLoading;
   const featuredError = airsoftQuery.isError || pressaoQuery.isError;
   const refetchFeatured = () => {
@@ -66,7 +60,8 @@ function Home() {
               Equipamento <span className="text-bunker-tan">tático</span> de alta performance
             </h1>
             <p className="mt-5 text-base md:text-lg text-bunker-text-secondary max-w-xl">
-              Arsenal completo para operadores sérios. Airsoft, armas de pressão e gear tático de verdade.
+              Arsenal completo para operadores sérios. Airsoft, armas de pressão e gear tático de
+              verdade.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -77,10 +72,10 @@ function Home() {
                 Ver Equipamentos
               </Link>
               <a
-                href="#ofertas"
+                href="#catalogo"
                 className="inline-flex items-center justify-center border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-tan/10 transition-colors"
               >
-                Ver Ofertas
+                Ver Catálogo
               </a>
             </div>
           </div>
@@ -88,11 +83,11 @@ function Home() {
       </section>
 
       {/* CARROSSEL 1 */}
-      <section id="ofertas" className="bg-bunker-black border-t border-bunker-graphite">
+      <section id="catalogo" className="bg-bunker-black border-t border-bunker-graphite">
         <div className="max-w-[1400px] mx-auto px-4 py-14">
           <SectionTitle
             title="Arsenal em Destaque"
-            subtitle="Rifles e pistolas selecionados com os melhores preços"
+            subtitle="Rifles e pistolas disponíveis no catálogo"
           />
           <ProductCarousel
             products={featuredProducts}

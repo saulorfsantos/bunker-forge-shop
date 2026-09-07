@@ -1,28 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  BRAZIL_REGION_ID,
-  PRODUCT_LIST_FIELDS,
-  sdk,
-} from "@/lib/medusa";
+import { BRAZIL_REGION_ID, PRODUCT_LIST_FIELDS, sdk } from "@/lib/medusa";
 import type { Category, Product } from "@/types/product";
 import placeholderImage from "@/assets/logo-shield.png";
-
-type MedusaProduct = {
-  id: string;
-  title: string;
-  handle: string;
-  thumbnail?: string | null;
-  description?: string | null;
-  categories?: Array<{ id: string; handle: string; name: string }>;
-  variants?: Array<{
-    id: string;
-    sku?: string | null;
-    calculated_price?: {
-      calculated_amount?: number;
-      original_amount?: number;
-    };
-  }>;
-};
+import {
+  mapMedusaProduct,
+  mapMedusaVariant,
+  resolveProductImages,
+  type MedusaProduct,
+  type MedusaVariant,
+} from "@/lib/catalog";
 
 type MedusaCategory = {
   id: string;
@@ -31,24 +17,15 @@ type MedusaCategory = {
 };
 
 const PRODUCT_DETAIL_FIELDS =
-  "id,title,handle,description,thumbnail,*images,*categories,*variants,*variants.calculated_price,*options";
+  "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,*variants,+variants.inventory_quantity,*options";
 
 type MedusaProductDetail = MedusaProduct & {
-  images?: Array<{ url?: string | null }>;
   options?: Array<{
     id: string;
     title: string;
     values?: Array<{ id: string; value: string }>;
   }>;
-  variants?: Array<{
-    id: string;
-    title?: string | null;
-    sku?: string | null;
-    calculated_price?: {
-      calculated_amount?: number;
-      original_amount?: number;
-    };
-  }>;
+  variants?: MedusaVariant[];
 };
 
 export type ProductVariantDetail = {
@@ -57,6 +34,10 @@ export type ProductVariantDetail = {
   title: string;
   currentPrice: number;
   originalPrice: number;
+  priceAvailable: boolean;
+  stock: number | null;
+  isAvailable: boolean;
+  allowBackorder: boolean;
 };
 
 export type ProductOptionDetail = {
@@ -77,67 +58,13 @@ const CATEGORY_ICON_BY_HANDLE: Record<string, Category["icon"]> = {
   cutelaria: "Swords",
 };
 
-export function mapMedusaProduct(product: MedusaProduct): Product {
-  const variant = product.variants?.[0];
-  const price = variant?.calculated_price?.calculated_amount ?? 0;
-  const originalPrice = variant?.calculated_price?.original_amount ?? price;
-  const categoryHandle = product.categories?.[0]?.handle ?? "";
-
-  return {
-    id: product.id,
-    name: product.title,
-    slug: product.handle,
-    category: categoryHandle,
-    subcategory: "",
-    brand: "Bunker 81",
-    sku: variant?.sku ?? "",
-    defaultVariantId: variant?.id,
-    images: product.thumbnail ? [product.thumbnail] : [placeholderImage],
-    description: product.description ?? "",
-    specs: {},
-    costPrice: price,
-    price1: originalPrice,
-    price2: price,
-    price3: price,
-    currentPrice: price,
-    discountPercent:
-      originalPrice > price
-        ? Math.round(((originalPrice - price) / originalPrice) * 100)
-        : 0,
-    stock: 0,
-    isNew: false,
-    isPromo: originalPrice > price,
-    rating: 0,
-    reviewsCount: 0,
-  };
-}
-
-function resolveProductImages(product: MedusaProductDetail): string[] {
-  const fromImages = (product.images ?? [])
-    .map((image) => image.url)
-    .filter((url): url is string => Boolean(url));
-
-  if (fromImages.length > 0) return fromImages;
-  if (product.thumbnail) return [product.thumbnail];
-  return [placeholderImage];
-}
-
 export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDetail {
-  const base = mapMedusaProduct(product);
+  const base = mapMedusaProduct(product, placeholderImage);
 
   return {
     ...base,
-    images: resolveProductImages(product),
-    variants: (product.variants ?? []).map((variant) => ({
-      id: variant.id,
-      sku: variant.sku ?? "",
-      title: variant.title ?? "",
-      currentPrice: variant.calculated_price?.calculated_amount ?? 0,
-      originalPrice:
-        variant.calculated_price?.original_amount ??
-        variant.calculated_price?.calculated_amount ??
-        0,
-    })),
+    images: resolveProductImages(product, placeholderImage),
+    variants: (product.variants ?? []).map(mapMedusaVariant),
     options: (product.options ?? []).map((option) => ({
       id: option.id,
       title: option.title,
@@ -163,7 +90,9 @@ async function fetchProducts(options: { limit?: number; categoryId?: string }) {
     ...(options.categoryId ? { category_id: [options.categoryId] } : {}),
   });
 
-  return (products as MedusaProduct[]).map(mapMedusaProduct);
+  return (products as MedusaProduct[]).map((product) =>
+    mapMedusaProduct(product, placeholderImage),
+  );
 }
 
 async function fetchSearchProducts(query: string, limit = 50) {
@@ -174,7 +103,9 @@ async function fetchSearchProducts(query: string, limit = 50) {
     fields: PRODUCT_LIST_FIELDS,
   });
 
-  return (products as MedusaProduct[]).map(mapMedusaProduct);
+  return (products as MedusaProduct[]).map((product) =>
+    mapMedusaProduct(product, placeholderImage),
+  );
 }
 
 async function fetchProduct(id: string) {

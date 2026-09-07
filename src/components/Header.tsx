@@ -65,8 +65,12 @@ export function Header() {
           <Link to="/" className="shrink-0 flex items-center gap-3">
             <img src={logoShield} alt="Bunker 81 Airsoft" className="h-24 w-auto" />
             <span className="hidden lg:flex flex-col leading-none">
-              <span className="font-display text-bunker-tan text-3xl uppercase tracking-wider">Bunker 81</span>
-              <span className="text-xs text-bunker-text-secondary uppercase tracking-widest mt-1">Onde a missão começa</span>
+              <span className="font-display text-bunker-tan text-3xl uppercase tracking-wider">
+                Bunker 81
+              </span>
+              <span className="text-xs text-bunker-text-secondary uppercase tracking-widest mt-1">
+                Onde a missão começa
+              </span>
             </span>
           </Link>
 
@@ -289,7 +293,9 @@ function SearchFormWithSuggestions({
           {isSearchLoading ? (
             <p className="px-4 py-3 text-sm text-bunker-text-secondary">Buscando...</p>
           ) : results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-bunker-text-secondary">Nenhum produto encontrado</p>
+            <p className="px-4 py-3 text-sm text-bunker-text-secondary">
+              Nenhum produto encontrado
+            </p>
           ) : (
             <ul>
               {results.slice(0, AUTOCOMPLETE_LIMIT).map((product) => (
@@ -307,9 +313,13 @@ function SearchFormWithSuggestions({
                       className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite pointer-events-none"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-bunker-text-primary line-clamp-1">{product.name}</p>
+                      <p className="text-sm text-bunker-text-primary line-clamp-1">
+                        {product.name}
+                      </p>
                       <p className="text-xs text-bunker-tan tabular-nums mt-0.5">
-                        {formatBRL(product.currentPrice)}
+                        {product.priceAvailable
+                          ? formatBRL(product.currentPrice)
+                          : "Preço indisponível"}
                       </p>
                     </div>
                   </Link>

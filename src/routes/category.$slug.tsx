@@ -37,7 +37,7 @@ export const Route = createFileRoute("/category/$slug")({
       { title: "Categoria — Bunker 81 Airsoft" },
       {
         name: "description",
-        content: "Confira nossa linha de produtos na Bunker 81 Airsoft. Equipamentos táticos com os melhores preços.",
+        content: "Confira os produtos disponíveis no catálogo da Bunker 81 Airsoft.",
       },
     ],
   }),
@@ -51,39 +51,44 @@ function CategoryPage() {
   const categoryQuery = useCategoryByHandle(slug);
   const categoryId = categoryQuery.data?.id;
   const productsQuery = useProductsByCategory(categoryId ?? "", 100);
-  const allProducts = productsQuery.data ?? [];
+  const allProducts = useMemo(() => productsQuery.data ?? [], [productsQuery.data]);
 
   const brands = useMemo(
     () => Array.from(new Set(allProducts.map((p) => p.brand))).sort(),
     [allProducts],
   );
   const maxPrice = useMemo(
-    () => Math.max(1000, ...allProducts.map((p) => p.currentPrice)),
+    () => Math.max(1000, ...allProducts.filter((p) => p.priceAvailable).map((p) => p.currentPrice)),
     [allProducts],
   );
 
   const [selectedSubs, setSelectedSubs] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(maxPrice);
+  const [priceMax, setPriceMax] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("relevance");
   const [openFilters, setOpenFilters] = useState(false);
 
   const filtered = useMemo(() => {
+    const effectivePriceMax = priceMax ?? maxPrice;
     let res: Product[] = allProducts.filter((p) => {
       if (selectedSubs.length && !selectedSubs.includes(p.subcategory)) return false;
       if (selectedBrands.length && !selectedBrands.includes(p.brand)) return false;
-      if (p.currentPrice < priceMin || p.currentPrice > priceMax) return false;
-      if (inStockOnly && p.stock <= 0) return false;
+      if (p.priceAvailable && (p.currentPrice < priceMin || p.currentPrice > effectivePriceMax))
+        return false;
+      if (!p.priceAvailable && (priceMin > 0 || priceMax !== null)) return false;
+      if (inStockOnly && !p.isAvailable) return false;
       return true;
     });
     res = [...res];
-    if (sort === "price-asc") res.sort((a, b) => a.currentPrice - b.currentPrice);
-    else if (sort === "price-desc") res.sort((a, b) => b.currentPrice - a.currentPrice);
-    else if (sort === "newest") res.sort((a, b) => Number(b.isNew) - Number(a.isNew));
+    if (sort === "price-asc") {
+      res.sort((a, b) => compareProductPrices(a, b, "asc"));
+    } else if (sort === "price-desc") {
+      res.sort((a, b) => compareProductPrices(a, b, "desc"));
+    } else if (sort === "newest") res.sort((a, b) => Number(b.isNew) - Number(a.isNew));
     return res;
-  }, [allProducts, selectedSubs, selectedBrands, priceMin, priceMax, inStockOnly, sort]);
+  }, [allProducts, selectedSubs, selectedBrands, priceMin, priceMax, maxPrice, inStockOnly, sort]);
 
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -93,7 +98,7 @@ function CategoryPage() {
     setSelectedSubs([]);
     setSelectedBrands([]);
     setPriceMin(0);
-    setPriceMax(maxPrice);
+    setPriceMax(null);
     setInStockOnly(false);
   };
 
@@ -109,7 +114,10 @@ function CategoryPage() {
             <Skeleton className="hidden lg:block h-96 bg-bunker-graphite/60 rounded-sm" />
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={`category-product-skeleton-${index}`} className="aspect-[3/4] bg-bunker-graphite/60 rounded-sm" />
+                <Skeleton
+                  key={`category-product-skeleton-${index}`}
+                  className="aspect-[3/4] bg-bunker-graphite/60 rounded-sm"
+                />
               ))}
             </div>
           </div>
@@ -158,7 +166,7 @@ function CategoryPage() {
           <span className="text-bunker-text-secondary">—</span>
           <input
             type="number"
-            value={priceMax}
+            value={priceMax ?? maxPrice}
             min={0}
             onChange={(e) => setPriceMax(Number(e.target.value) || 0)}
             className="w-full bg-bunker-black border border-bunker-graphite rounded-sm px-2 py-1.5 text-bunker-text-primary focus:outline-none focus:border-bunker-tan"
@@ -208,7 +216,9 @@ function CategoryPage() {
       <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1 text-xs text-bunker-text-secondary mb-4">
-          <Link to="/" className="hover:text-bunker-tan">Home</Link>
+          <Link to="/" className="hover:text-bunker-tan">
+            Home
+          </Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-bunker-tan uppercase tracking-wider">{category.name}</span>
         </nav>
@@ -219,7 +229,8 @@ function CategoryPage() {
               {category.name}
             </h1>
             <p className="text-bunker-text-secondary text-sm mt-1">
-              {filtered.length} {filtered.length === 1 ? "produto encontrado" : "produtos encontrados"}
+              {filtered.length}{" "}
+              {filtered.length === 1 ? "produto encontrado" : "produtos encontrados"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -258,7 +269,10 @@ function CategoryPage() {
               openFilters ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
             )}
           >
-            <div className="absolute inset-0 bg-bunker-black/80" onClick={() => setOpenFilters(false)} />
+            <div
+              className="absolute inset-0 bg-bunker-black/80"
+              onClick={() => setOpenFilters(false)}
+            />
             <div
               className={cn(
                 "absolute right-0 top-0 h-full w-[85%] max-w-sm bg-bunker-charcoal border-l border-bunker-graphite p-5 overflow-y-auto transition-transform",
@@ -292,6 +306,14 @@ function CategoryPage() {
       </div>
     </Layout>
   );
+}
+
+function compareProductPrices(left: Product, right: Product, direction: "asc" | "desc") {
+  if (!left.priceAvailable) return right.priceAvailable ? 1 : 0;
+  if (!right.priceAvailable) return -1;
+  return direction === "asc"
+    ? left.currentPrice - right.currentPrice
+    : right.currentPrice - left.currentPrice;
 }
 
 function FilterBlock({ title, children }: { title: string; children: React.ReactNode }) {
