@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
-import { formatBRL } from "@/data/mockData";
+import { formatBRL } from "@/lib/money";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/cart")({
@@ -165,19 +165,39 @@ function CartPage() {
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-bunker-text-secondary">Total dos produtos</dt>
-                <dd className="tabular-nums">{formatBRL(totalPrice)}</dd>
+                <dd className="tabular-nums">
+                  {totalPrice === null ? "Preço indisponível" : formatBRL(totalPrice)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-bunker-text-secondary">Frete</dt>
+                <dd className="text-xs text-bunker-text-secondary">Calculado no checkout</dd>
+              </div>
+              <div className="border-t border-bunker-graphite pt-3 flex justify-between text-base">
+                <dt className="font-bold uppercase tracking-wider">Subtotal</dt>
+                <dd className="price-tag text-xl">
+                  {totalPrice === null ? "Preço indisponível" : formatBRL(totalPrice)}
+                </dd>
               </div>
               <p className="text-xs text-bunker-text-secondary">
-                Frete e condições de pagamento não estão incluídos nesta prévia.
+                O total final será confirmado após a seleção do frete e do provedor de pagamento.
               </p>
             </dl>
-            <button
-              type="button"
-              onClick={() => alert("Checkout será integrado em breve.")}
-              className="mt-5 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3 rounded-sm hover:bg-bunker-tan-dark transition-colors"
-            >
-              Finalizar Compra
-            </button>
+            {totalPrice === null ? (
+              <p
+                role="alert"
+                className="mt-5 border border-bunker-danger bg-bunker-danger/10 px-4 py-3 text-xs leading-relaxed text-bunker-text-primary"
+              >
+                O checkout fica indisponível enquanto algum item estiver sem preço confirmado.
+              </p>
+            ) : (
+              <Link
+                to="/checkout"
+                className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+              >
+                Finalizar Compra
+              </Link>
+            )}
             <Link
               to="/"
               className="mt-3 block text-center text-xs uppercase tracking-wider text-bunker-tan hover:underline"

@@ -16,13 +16,14 @@ import placeholderImage from "@/assets/logo-shield.png";
 interface CartContextValue {
   items: CartItem[];
   itemCount: number;
-  totalPrice: number;
+  totalPrice: number | null;
   isLoading: boolean;
   isPending: boolean;
   addItem: (variantId: string, quantity?: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  markCartCompleted: () => void;
   getProduct: (lineItemId: string) => Product | undefined;
 }
 
@@ -141,10 +142,11 @@ function getProductFromCart(cart: MedusaCartState | null, lineItemId: string): P
   return lineItem ? mapLineItemToProduct(lineItem) : undefined;
 }
 
-function getTotalFromCart(cart: MedusaCartState | null): number {
-  if (!cart) return 0;
+function getTotalFromCart(cart: MedusaCartState | null): number | null {
+  if (!cart) return null;
+  if ((cart.items ?? []).some((item) => typeof item.unit_price !== "number")) return null;
   if (typeof cart.subtotal === "number") return cart.subtotal;
-  return (cart.items ?? []).reduce((sum, item) => sum + (item.unit_price ?? 0) * item.quantity, 0);
+  return (cart.items ?? []).reduce((sum, item) => sum + item.unit_price! * item.quantity, 0);
 }
 
 function findLineItemById(
@@ -337,6 +339,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [isPending, refreshCart]);
 
+  const markCartCompleted = useCallback(() => {
+    clearStoredMedusaCartId();
+    medusaCartRef.current = null;
+    setMedusaCart(null);
+  }, []);
+
   const items = useMemo(() => mapCartToItems(medusaCart), [medusaCart]);
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const totalPrice = useMemo(() => getTotalFromCart(medusaCart), [medusaCart]);
@@ -357,6 +365,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       updateQuantity,
       clearCart,
+      markCartCompleted,
       getProduct,
     }),
     [
@@ -369,6 +378,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       updateQuantity,
       clearCart,
+      markCartCompleted,
       getProduct,
     ],
   );
