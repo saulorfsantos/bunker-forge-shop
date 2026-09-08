@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, LoaderCircle, PackageCheck, ReceiptText, ShieldCheck } from "lucide-react";
+import { CheckCircle2, LoaderCircle, PackageCheck, ReceiptText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
-import { getOrderStatusLabel } from "@/lib/checkout-copy";
+import { getOrderDisplayLabel, getOrderStatusLabel } from "@/lib/checkout-copy";
 import { formatBRL } from "@/lib/money";
 import { readStoredOrderReceipt, retrieveOrder, type OrderReceipt } from "@/lib/checkout";
 
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/order-confirmation")({
     order_id: typeof search.order_id === "string" ? search.order_id : "",
   }),
   head: () => ({
-    meta: [{ title: "Pedido confirmado — Bunker 81 Airsoft" }],
+    meta: [{ title: "Pedido registrado — Bunker 81 Airsoft" }],
   }),
   component: OrderConfirmationPage,
 });
@@ -35,7 +35,7 @@ function OrderConfirmationPage() {
       .then(setOrder)
       .catch(() => {
         setError(
-          "Não foi possível recarregar os detalhes do pedido. Use a referência abaixo ao falar com a Bunker 81.",
+          "Não foi possível recarregar os detalhes do pedido. Entre em contato com a Bunker 81 para receber orientação.",
         );
       })
       .finally(() => setIsLoading(false));
@@ -64,15 +64,15 @@ function OrderConfirmationPage() {
           </p>
           <h1 className="mt-2 font-display text-4xl uppercase tracking-wider md:text-5xl">
             {isVerified
-              ? "Pedido confirmado"
+              ? "Pedido registrado"
               : isLoading
                 ? "Validando pedido"
                 : "Confirmação indisponível"}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-bunker-text-secondary">
             {isVerified
-              ? "Seu pedido foi confirmado. Guarde a identificação abaixo para acompanhar o atendimento com a Bunker 81."
-              : "Não foi possível exibir os detalhes do pedido. Confira a identificação informada ou tente novamente."}
+              ? "Seu pedido foi registrado. Nenhuma cobrança foi realizada neste momento. A Bunker 81 entrará em contato para combinar o pagamento."
+              : "Não foi possível exibir os detalhes do pedido. Entre em contato com a Bunker 81 para receber orientação."}
           </p>
         </div>
       </div>
@@ -90,11 +90,6 @@ function OrderConfirmationPage() {
         {!isLoading && !order && (
           <div className="border-l-2 border-bunker-danger bg-bunker-danger/10 p-5 text-sm">
             {error || "Não foi informada uma identificação de pedido válida."}
-            {orderId && (
-              <p className="mt-2 break-all font-mono text-xs text-bunker-text-secondary">
-                Referência: {orderId}
-              </p>
-            )}
           </div>
         )}
 
@@ -118,7 +113,7 @@ function OrderConfirmationPage() {
 }
 
 function Receipt({ order }: { order: OrderReceipt }) {
-  const orderLabel = order.display_id ? `#${order.display_id}` : order.id;
+  const orderLabel = getOrderDisplayLabel(order.display_id);
   return (
     <article className="border border-bunker-graphite bg-bunker-charcoal">
       <header className="flex flex-col justify-between gap-3 border-b border-bunker-graphite p-5 sm:flex-row sm:items-center">
@@ -167,8 +162,8 @@ function Receipt({ order }: { order: OrderReceipt }) {
 
         <div className="flex items-end justify-between border-t border-bunker-graphite pt-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-bunker-text-secondary">
-            <ShieldCheck className="h-4 w-4 text-bunker-military-light" />
-            Pedido confirmado com segurança
+            <ReceiptText className="h-4 w-4 text-bunker-military-light" />
+            Pedido registrado na Bunker 81
           </div>
           {typeof order.total === "number" && (
             <div className="text-right">

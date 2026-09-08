@@ -3,11 +3,11 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import {
   Check,
   ChevronLeft,
-  CreditCard,
   LoaderCircle,
   LockKeyhole,
   MapPin,
   PackageCheck,
+  ReceiptText,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -307,7 +307,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
   const steps: Array<{ id: CheckoutStep; label: string }> = [
     { id: "address", label: "Endereço" },
     { id: "shipping", label: "Frete" },
-    { id: "payment", label: "Pagamento" },
+    { id: "payment", label: "Pedido" },
   ];
   const currentIndex = steps.findIndex((step) => step.id === current);
 
@@ -551,11 +551,11 @@ function PaymentForm({
       className="border border-bunker-graphite bg-bunker-charcoal p-5 md:p-7"
     >
       <div className="flex items-center gap-3 border-b border-bunker-graphite pb-5">
-        <CreditCard className="h-6 w-6 text-bunker-tan" />
+        <ReceiptText className="h-6 w-6 text-bunker-tan" />
         <div>
-          <h2 className="font-display text-xl uppercase tracking-wider">Pagamento</h2>
+          <h2 className="font-display text-xl uppercase tracking-wider">Registro do pedido</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Seu pedido será processado com segurança.
+            Nenhuma cobrança é realizada neste checkout.
           </p>
         </div>
       </div>
@@ -582,7 +582,7 @@ function PaymentForm({
                 {getPaymentOptionLabel(provider.id)}
               </span>
               <span className="mt-1 block text-xs leading-relaxed text-bunker-text-secondary">
-                Você não precisa informar dados de cartão nesta etapa.
+                A Bunker 81 entrará em contato para combinar o pagamento.
               </span>
             </span>
           </label>
@@ -591,12 +591,12 @@ function PaymentForm({
       <div className="mt-5 flex items-start gap-3 border border-bunker-military-light/40 bg-bunker-military/10 p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-bunker-military-light" />
         <p className="text-xs leading-relaxed text-bunker-text-secondary">
-          Ao confirmar, seu pedido será enviado para processamento. Se não for possível concluí-lo,
-          o carrinho será preservado para uma nova tentativa.
+          Ao confirmar, seu pedido será registrado, mas o pagamento continuará pendente. Se não for
+          possível registrá-lo, o carrinho será preservado para uma nova tentativa.
         </p>
       </div>
       <SecondaryButton onClick={onBack}>Editar frete</SecondaryButton>
-      <PrimaryButton isSubmitting={isSubmitting}>Confirmar pedido</PrimaryButton>
+      <PrimaryButton isSubmitting={isSubmitting}>Registrar pedido</PrimaryButton>
     </form>
   );
 }
