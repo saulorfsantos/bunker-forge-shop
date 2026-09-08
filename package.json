@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "test": "tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .test-output --rewriteRelativeImportExtensions --strict --skipLibCheck --types node src/types/product.ts src/lib/catalog.ts src/lib/catalog.test.ts && node --test .test-output/lib/catalog.test.js",
+    "test": "npm run test:catalog && npm run test:checkout",
+    "test:catalog": "tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .test-output --rewriteRelativeImportExtensions --strict --skipLibCheck --types node src/types/product.ts src/lib/catalog.ts src/lib/catalog.test.ts && node --test .test-output/lib/catalog.test.js",
+    "test:checkout": "node --test tests/*.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
