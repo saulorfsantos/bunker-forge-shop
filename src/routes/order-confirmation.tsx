@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, LoaderCircle, PackageCheck, ReceiptText, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
+import { getOrderStatusLabel } from "@/lib/checkout-copy";
 import { formatBRL } from "@/lib/money";
 import { readStoredOrderReceipt, retrieveOrder, type OrderReceipt } from "@/lib/checkout";
 
@@ -34,7 +35,7 @@ function OrderConfirmationPage() {
       .then(setOrder)
       .catch(() => {
         setError(
-          "O pedido foi criado, mas o backend não permitiu recarregar os detalhes nesta sessão guest.",
+          "Não foi possível recarregar os detalhes do pedido. Use a referência abaixo ao falar com a Bunker 81.",
         );
       })
       .finally(() => setIsLoading(false));
@@ -56,10 +57,10 @@ function OrderConfirmationPage() {
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-bunker-tan">
             {isVerified
-              ? "Operação concluída"
+              ? "Pedido recebido"
               : isLoading
-                ? "Validação em andamento"
-                : "Consulta encerrada"}
+                ? "Consulta em andamento"
+                : "Detalhes indisponíveis"}
           </p>
           <h1 className="mt-2 font-display text-4xl uppercase tracking-wider md:text-5xl">
             {isVerified
@@ -70,8 +71,8 @@ function OrderConfirmationPage() {
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-bunker-text-secondary">
             {isVerified
-              ? "O pedido foi criado pelo backend Medusa. Guarde a identificação abaixo para acompanhar o atendimento com a Bunker 81."
-              : "Esta tela só confirma um pedido quando recebe ou recupera uma resposta válida do backend Medusa."}
+              ? "Seu pedido foi confirmado. Guarde a identificação abaixo para acompanhar o atendimento com a Bunker 81."
+              : "Não foi possível exibir os detalhes do pedido. Confira a identificação informada ou tente novamente."}
           </p>
         </div>
       </div>
@@ -80,7 +81,7 @@ function OrderConfirmationPage() {
         {isLoading && (
           <div className="flex items-center justify-center gap-3 border border-bunker-graphite bg-bunker-charcoal p-8 text-sm text-bunker-text-secondary">
             <LoaderCircle className="h-5 w-5 animate-spin text-bunker-tan" />
-            Consultando pedido no Medusa...
+            Consultando os dados do pedido...
           </div>
         )}
 
@@ -145,7 +146,7 @@ function Receipt({ order }: { order: OrderReceipt }) {
       <div className="p-5">
         <dl className="grid gap-4 border-b border-bunker-graphite pb-5 sm:grid-cols-2">
           <ReceiptDatum label="E-mail" value={order.email ?? "Informado no checkout"} />
-          <ReceiptDatum label="Status" value={order.status ?? "pending"} capitalize />
+          <ReceiptDatum label="Status" value={getOrderStatusLabel(order.status)} />
         </dl>
 
         {order.items && order.items.length > 0 && (
@@ -167,7 +168,7 @@ function Receipt({ order }: { order: OrderReceipt }) {
         <div className="flex items-end justify-between border-t border-bunker-graphite pt-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-bunker-text-secondary">
             <ShieldCheck className="h-4 w-4 text-bunker-military-light" />
-            Resposta confirmada pelo backend
+            Pedido confirmado com segurança
           </div>
           {typeof order.total === "number" && (
             <div className="text-right">
@@ -183,21 +184,13 @@ function Receipt({ order }: { order: OrderReceipt }) {
   );
 }
 
-function ReceiptDatum({
-  label,
-  value,
-  capitalize = false,
-}: {
-  label: string;
-  value: string;
-  capitalize?: boolean;
-}) {
+function ReceiptDatum({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-bunker-text-secondary">
         {label}
       </dt>
-      <dd className={`mt-1 text-sm ${capitalize ? "capitalize" : ""}`}>{value}</dd>
+      <dd className="mt-1 text-sm">{value}</dd>
     </div>
   );
 }
