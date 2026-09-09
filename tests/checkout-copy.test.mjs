@@ -41,6 +41,9 @@ test("checkout copy states that no charge occurs and does not suggest a later ca
   assert.match(checkoutSource, /o pagamento continuará pendente/);
   assert.doesNotMatch(checkoutSource, /dados de cartão/i);
   assert.doesNotMatch(checkoutSource, /processado com segurança/i);
+  assert.doesNotMatch(checkoutSource, /Checkout seguro/i);
+  assert.doesNotMatch(checkoutSource, /Ambiente seguro/i);
+  assert.doesNotMatch(checkoutSource, /CreditCard|LockKeyhole|ShieldCheck/);
 });
 
 test("confirmation distinguishes a registered order from an unpaid order", () => {

@@ -1,14 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import {
+  BadgeInfo,
   Check,
   ChevronLeft,
   LoaderCircle,
-  LockKeyhole,
   MapPin,
   PackageCheck,
   ReceiptText,
-  ShieldCheck,
   Truck,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -33,7 +32,7 @@ import {
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
-    meta: [{ title: "Checkout seguro — Bunker 81 Airsoft" }],
+    meta: [{ title: "Finalizar pedido — Bunker 81 Airsoft" }],
   }),
   component: CheckoutPage,
 });
@@ -240,7 +239,7 @@ function CheckoutPage() {
                 Protocolo de aquisição
               </p>
               <h1 className="mt-1 font-display text-3xl uppercase tracking-wider md:text-4xl">
-                Checkout seguro
+                Finalizar pedido
               </h1>
             </div>
             <StepIndicator current={step} />
@@ -589,7 +588,7 @@ function PaymentForm({
         ))}
       </div>
       <div className="mt-5 flex items-start gap-3 border border-bunker-military-light/40 bg-bunker-military/10 p-4">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-bunker-military-light" />
+        <BadgeInfo className="mt-0.5 h-5 w-5 shrink-0 text-bunker-military-light" />
         <p className="text-xs leading-relaxed text-bunker-text-secondary">
           Ao confirmar, seu pedido será registrado, mas o pagamento continuará pendente. Se não for
           possível registrá-lo, o carrinho será preservado para uma nova tentativa.
@@ -695,8 +694,8 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
         </div>
       </dl>
       <div className="mt-5 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-bunker-text-secondary">
-        <LockKeyhole className="h-3.5 w-3.5 text-bunker-military-light" />
-        Ambiente seguro para finalizar seu pedido
+        <ReceiptText className="h-3.5 w-3.5 text-bunker-military-light" />
+        Confira os dados antes de registrar o pedido
       </div>
     </aside>
   );
