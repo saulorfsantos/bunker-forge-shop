@@ -180,7 +180,7 @@ function CartPage() {
                 </dd>
               </div>
               <p className="text-xs text-bunker-text-secondary">
-                O total final será confirmado após a seleção do frete e do provedor de pagamento.
+                O total final será confirmado após a seleção do frete e da forma de pagamento.
               </p>
             </dl>
             {totalPrice === null ? (

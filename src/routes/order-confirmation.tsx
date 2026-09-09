@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, LoaderCircle, PackageCheck, ReceiptText, ShieldCheck } from "lucide-react";
+import { CheckCircle2, LoaderCircle, PackageCheck, ReceiptText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
+import { getOrderDisplayLabel, getOrderStatusLabel } from "@/lib/checkout-copy";
 import { formatBRL } from "@/lib/money";
 import { readStoredOrderReceipt, retrieveOrder, type OrderReceipt } from "@/lib/checkout";
 
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/order-confirmation")({
     order_id: typeof search.order_id === "string" ? search.order_id : "",
   }),
   head: () => ({
-    meta: [{ title: "Pedido confirmado — Bunker 81 Airsoft" }],
+    meta: [{ title: "Pedido registrado — Bunker 81 Airsoft" }],
   }),
   component: OrderConfirmationPage,
 });
@@ -34,7 +35,7 @@ function OrderConfirmationPage() {
       .then(setOrder)
       .catch(() => {
         setError(
-          "O pedido foi criado, mas o backend não permitiu recarregar os detalhes nesta sessão guest.",
+          "Não foi possível recarregar os detalhes do pedido. Entre em contato com a Bunker 81 para receber orientação.",
         );
       })
       .finally(() => setIsLoading(false));
@@ -56,22 +57,22 @@ function OrderConfirmationPage() {
           </div>
           <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-bunker-tan">
             {isVerified
-              ? "Operação concluída"
+              ? "Pedido recebido"
               : isLoading
-                ? "Validação em andamento"
-                : "Consulta encerrada"}
+                ? "Consulta em andamento"
+                : "Detalhes indisponíveis"}
           </p>
           <h1 className="mt-2 font-display text-4xl uppercase tracking-wider md:text-5xl">
             {isVerified
-              ? "Pedido confirmado"
+              ? "Pedido registrado"
               : isLoading
                 ? "Validando pedido"
                 : "Confirmação indisponível"}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-bunker-text-secondary">
             {isVerified
-              ? "O pedido foi criado pelo backend Medusa. Guarde a identificação abaixo para acompanhar o atendimento com a Bunker 81."
-              : "Esta tela só confirma um pedido quando recebe ou recupera uma resposta válida do backend Medusa."}
+              ? "Seu pedido foi registrado. Nenhuma cobrança foi realizada neste momento. A Bunker 81 entrará em contato para combinar o pagamento."
+              : "Não foi possível exibir os detalhes do pedido. Entre em contato com a Bunker 81 para receber orientação."}
           </p>
         </div>
       </div>
@@ -80,7 +81,7 @@ function OrderConfirmationPage() {
         {isLoading && (
           <div className="flex items-center justify-center gap-3 border border-bunker-graphite bg-bunker-charcoal p-8 text-sm text-bunker-text-secondary">
             <LoaderCircle className="h-5 w-5 animate-spin text-bunker-tan" />
-            Consultando pedido no Medusa...
+            Consultando os dados do pedido...
           </div>
         )}
 
@@ -89,11 +90,6 @@ function OrderConfirmationPage() {
         {!isLoading && !order && (
           <div className="border-l-2 border-bunker-danger bg-bunker-danger/10 p-5 text-sm">
             {error || "Não foi informada uma identificação de pedido válida."}
-            {orderId && (
-              <p className="mt-2 break-all font-mono text-xs text-bunker-text-secondary">
-                Referência: {orderId}
-              </p>
-            )}
           </div>
         )}
 
@@ -117,7 +113,7 @@ function OrderConfirmationPage() {
 }
 
 function Receipt({ order }: { order: OrderReceipt }) {
-  const orderLabel = order.display_id ? `#${order.display_id}` : order.id;
+  const orderLabel = getOrderDisplayLabel(order.display_id);
   return (
     <article className="border border-bunker-graphite bg-bunker-charcoal">
       <header className="flex flex-col justify-between gap-3 border-b border-bunker-graphite p-5 sm:flex-row sm:items-center">
@@ -145,7 +141,7 @@ function Receipt({ order }: { order: OrderReceipt }) {
       <div className="p-5">
         <dl className="grid gap-4 border-b border-bunker-graphite pb-5 sm:grid-cols-2">
           <ReceiptDatum label="E-mail" value={order.email ?? "Informado no checkout"} />
-          <ReceiptDatum label="Status" value={order.status ?? "pending"} capitalize />
+          <ReceiptDatum label="Status" value={getOrderStatusLabel(order.status)} />
         </dl>
 
         {order.items && order.items.length > 0 && (
@@ -166,8 +162,8 @@ function Receipt({ order }: { order: OrderReceipt }) {
 
         <div className="flex items-end justify-between border-t border-bunker-graphite pt-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-bunker-text-secondary">
-            <ShieldCheck className="h-4 w-4 text-bunker-military-light" />
-            Resposta confirmada pelo backend
+            <ReceiptText className="h-4 w-4 text-bunker-military-light" />
+            Pedido registrado na Bunker 81
           </div>
           {typeof order.total === "number" && (
             <div className="text-right">
@@ -183,21 +179,13 @@ function Receipt({ order }: { order: OrderReceipt }) {
   );
 }
 
-function ReceiptDatum({
-  label,
-  value,
-  capitalize = false,
-}: {
-  label: string;
-  value: string;
-  capitalize?: boolean;
-}) {
+function ReceiptDatum({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-[10px] font-bold uppercase tracking-[0.2em] text-bunker-text-secondary">
         {label}
       </dt>
-      <dd className={`mt-1 text-sm ${capitalize ? "capitalize" : ""}`}>{value}</dd>
+      <dd className="mt-1 text-sm">{value}</dd>
     </div>
   );
 }

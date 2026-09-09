@@ -122,9 +122,7 @@ export async function placeOrder(cartId: string, providerId: string): Promise<Or
     retrieveCart: async (currentCartId) => {
       const currentCart = await retrieveCheckoutCart(currentCartId);
       if (!areCheckoutLineItemPricesAvailable(currentCart.items)) {
-        throw new Error(
-          "O checkout foi interrompido porque o backend não confirmou o preço de todos os itens.",
-        );
+        throw new Error("O preço de um ou mais itens não pôde ser confirmado. Revise o carrinho.");
       }
       return currentCart;
     },
@@ -137,7 +135,7 @@ export async function placeOrder(cartId: string, providerId: string): Promise<Or
     completeCart: async (currentCartId) => {
       const result = await sdk.store.cart.complete(currentCartId, { fields: ORDER_FIELDS });
       if (result.type === "cart") {
-        throw new Error(result.error?.message ?? "O backend não conseguiu concluir o pedido.");
+        throw new Error("Não foi possível concluir o pedido. Seu carrinho foi preservado.");
       }
 
       return result.order as OrderReceipt;

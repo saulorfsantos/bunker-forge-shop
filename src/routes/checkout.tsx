@@ -3,16 +3,17 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "rea
 import {
   Check,
   ChevronLeft,
-  CreditCard,
   LoaderCircle,
   LockKeyhole,
   MapPin,
   PackageCheck,
+  ReceiptText,
   ShieldCheck,
   Truck,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
+import { getPaymentOptionLabel } from "@/lib/checkout-copy";
 import { formatBRL } from "@/lib/money";
 import { areCheckoutLineItemPricesAvailable, createSubmissionLock } from "@/lib/checkout-attempt";
 import {
@@ -54,16 +55,6 @@ const emptyAddress: CheckoutAddress = {
   phone: "",
 };
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  return "Não foi possível avançar no checkout. Tente novamente.";
-}
-
-function providerLabel(providerId: string): string {
-  if (providerId === "pp_system_default") return "Pagamento padrão da loja";
-  return providerId.replace(/^pp_/, "").replaceAll("_", " ");
-}
-
 function CheckoutPage() {
   const navigate = useNavigate();
   const { items, isLoading: isCartLoading, markCartCompleted } = useCart();
@@ -92,7 +83,7 @@ function CheckoutPage() {
         setCart(activeCart);
         setEmail(activeCart.email ?? "");
       })
-      .catch((loadError: unknown) => setError(getErrorMessage(loadError)))
+      .catch(() => setError("Não foi possível carregar seu checkout. Tente novamente."))
       .finally(() => setIsBooting(false));
   }, []);
 
@@ -104,9 +95,7 @@ function CheckoutPage() {
     event.preventDefault();
     if (!cart) return;
     if (!areCheckoutLineItemPricesAvailable(cart.items)) {
-      setError(
-        "O backend não confirmou o preço de todos os itens. Revise o carrinho para continuar.",
-      );
+      setError("O preço de um ou mais itens não pôde ser confirmado. Revise o carrinho.");
       return;
     }
 
@@ -130,13 +119,13 @@ function CheckoutPage() {
       setShippingOptionId(options[0]?.id ?? "");
       if (!options.length) {
         setError(
-          "O backend não retornou modalidades de frete para este endereço. Configure uma opção de fulfillment no Medusa para continuar.",
+          "Não há opções de frete disponíveis para este endereço. Revise os dados ou tente novamente mais tarde.",
         );
         return;
       }
       setStep("shipping");
-    } catch (submitError: unknown) {
-      setError(getErrorMessage(submitError));
+    } catch {
+      setError("Não foi possível consultar o frete. Revise o endereço e tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -156,13 +145,13 @@ function CheckoutPage() {
       setPaymentProviderId(providers[0]?.id ?? "");
       if (!providers.length) {
         setError(
-          "O backend não tem provedor de pagamento habilitado para a região Brasil. Configure um provedor no Medusa para continuar.",
+          "Não há uma forma de pagamento disponível no momento. Tente novamente mais tarde.",
         );
         return;
       }
       setStep("payment");
-    } catch (submitError: unknown) {
-      setError(getErrorMessage(submitError));
+    } catch {
+      setError("Não foi possível aplicar o frete. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -178,8 +167,10 @@ function CheckoutPage() {
     let order;
     try {
       order = await placeOrder(cart.id, paymentProviderId);
-    } catch (submitError: unknown) {
-      setError(getErrorMessage(submitError));
+    } catch {
+      setError(
+        "Não foi possível confirmar o pedido. Seu carrinho foi preservado para você tentar novamente.",
+      );
       try {
         setCart(await retrieveCheckoutCart(cart.id));
       } catch {
@@ -316,7 +307,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
   const steps: Array<{ id: CheckoutStep; label: string }> = [
     { id: "address", label: "Endereço" },
     { id: "shipping", label: "Frete" },
-    { id: "payment", label: "Pagamento" },
+    { id: "payment", label: "Pedido" },
   ];
   const currentIndex = steps.findIndex((step) => step.id === current);
 
@@ -372,7 +363,7 @@ function AddressForm({
         <div>
           <h2 className="font-display text-xl uppercase tracking-wider">Destino da entrega</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Estes dados são enviados diretamente ao carrinho Medusa.
+            Informe onde deseja receber seu pedido.
           </p>
         </div>
       </div>
@@ -500,7 +491,7 @@ function ShippingForm({
         <div>
           <h2 className="font-display text-xl uppercase tracking-wider">Modalidade de frete</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Opções calculadas e retornadas pelo backend para este carrinho.
+            Escolha a opção de entrega mais adequada para seu pedido.
           </p>
         </div>
       </div>
@@ -560,11 +551,11 @@ function PaymentForm({
       className="border border-bunker-graphite bg-bunker-charcoal p-5 md:p-7"
     >
       <div className="flex items-center gap-3 border-b border-bunker-graphite pb-5">
-        <CreditCard className="h-6 w-6 text-bunker-tan" />
+        <ReceiptText className="h-6 w-6 text-bunker-tan" />
         <div>
-          <h2 className="font-display text-xl uppercase tracking-wider">Pagamento</h2>
+          <h2 className="font-display text-xl uppercase tracking-wider">Registro do pedido</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Somente provedores realmente habilitados na região Brasil.
+            Nenhuma cobrança é realizada neste checkout.
           </p>
         </div>
       </div>
@@ -588,11 +579,10 @@ function PaymentForm({
             />
             <span>
               <span className="block text-sm font-semibold capitalize">
-                {providerLabel(provider.id)}
+                {getPaymentOptionLabel(provider.id)}
               </span>
               <span className="mt-1 block text-xs leading-relaxed text-bunker-text-secondary">
-                O pedido será registrado no provedor nativo do backend. Esta vitrine não coleta nem
-                simula dados de cartão.
+                A Bunker 81 entrará em contato para combinar o pagamento.
               </span>
             </span>
           </label>
@@ -601,12 +591,12 @@ function PaymentForm({
       <div className="mt-5 flex items-start gap-3 border border-bunker-military-light/40 bg-bunker-military/10 p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-bunker-military-light" />
         <p className="text-xs leading-relaxed text-bunker-text-secondary">
-          Ao confirmar, o Medusa inicializa a sessão no provedor selecionado e só então tenta criar
-          o pedido. Falhas do provedor permanecem visíveis e o carrinho é preservado.
+          Ao confirmar, seu pedido será registrado, mas o pagamento continuará pendente. Se não for
+          possível registrá-lo, o carrinho será preservado para uma nova tentativa.
         </p>
       </div>
       <SecondaryButton onClick={onBack}>Editar frete</SecondaryButton>
-      <PrimaryButton isSubmitting={isSubmitting}>Confirmar pedido</PrimaryButton>
+      <PrimaryButton isSubmitting={isSubmitting}>Registrar pedido</PrimaryButton>
     </form>
   );
 }
@@ -660,9 +650,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
   return (
     <aside className="self-start border border-bunker-graphite bg-bunker-charcoal p-5 lg:sticky lg:top-44">
       <div className="flex items-center justify-between border-b border-bunker-graphite pb-4">
-        <h2 className="font-display uppercase tracking-wider text-bunker-tan">
-          Resumo da operação
-        </h2>
+        <h2 className="font-display uppercase tracking-wider text-bunker-tan">Resumo do pedido</h2>
         <span className="text-xs text-bunker-text-secondary">
           {itemTotal} {itemTotal === 1 ? "item" : "itens"}
         </span>
@@ -708,7 +696,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
       </dl>
       <div className="mt-5 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-bunker-text-secondary">
         <LockKeyhole className="h-3.5 w-3.5 text-bunker-military-light" />
-        Conexão direta com Medusa Store API
+        Ambiente seguro para finalizar seu pedido
       </div>
     </aside>
   );
