@@ -1,9 +1,5 @@
 import { BRAZIL_REGION_ID, MEDUSA_CART_ID_KEY, sdk } from "@/lib/medusa";
-import {
-  areCheckoutLineItemPricesAvailable,
-  completeCheckoutAttempt,
-  type CartPaymentState,
-} from "@/lib/checkout-attempt";
+import type { MercadoPagoPaymentCollection } from "@/lib/payments/mercado-pago-contract";
 
 export const CHECKOUT_CONFIRMATION_KEY = "bunker81-last-order";
 
@@ -36,7 +32,7 @@ export interface CheckoutCart {
   tax_total?: number;
   total?: number;
   items?: CheckoutLineItem[];
-  payment_collection?: CartPaymentState["payment_collection"];
+  payment_collection?: MercadoPagoPaymentCollection | null;
 }
 
 export interface ShippingOption {
@@ -115,32 +111,6 @@ export async function listPaymentProviders(): Promise<PaymentProvider[]> {
     fields: "id",
   });
   return payment_providers as PaymentProvider[];
-}
-
-export async function placeOrder(cartId: string, providerId: string): Promise<OrderReceipt> {
-  return completeCheckoutAttempt(cartId, providerId, {
-    retrieveCart: async (currentCartId) => {
-      const currentCart = await retrieveCheckoutCart(currentCartId);
-      if (!areCheckoutLineItemPricesAvailable(currentCart.items)) {
-        throw new Error("O preço de um ou mais itens não pôde ser confirmado. Revise o carrinho.");
-      }
-      return currentCart;
-    },
-    initiatePaymentSession: async (currentCart, selectedProviderId) => {
-      await sdk.store.payment.initiatePaymentSession(
-        currentCart as Parameters<typeof sdk.store.payment.initiatePaymentSession>[0],
-        { provider_id: selectedProviderId },
-      );
-    },
-    completeCart: async (currentCartId) => {
-      const result = await sdk.store.cart.complete(currentCartId, { fields: ORDER_FIELDS });
-      if (result.type === "cart") {
-        throw new Error("Não foi possível concluir o pedido. Seu carrinho foi preservado.");
-      }
-
-      return result.order as OrderReceipt;
-    },
-  });
 }
 
 export async function retrieveOrder(orderId: string): Promise<OrderReceipt> {

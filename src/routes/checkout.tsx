@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import {
-  BadgeInfo,
   Check,
   ChevronLeft,
   LoaderCircle,
@@ -11,24 +10,25 @@ import {
   Truck,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
+import { MercadoPagoCheckout } from "@/components/checkout/MercadoPagoCheckout";
 import { useCart } from "@/contexts/CartContext";
-import { getPaymentOptionLabel } from "@/lib/checkout-copy";
 import { formatBRL } from "@/lib/money";
-import { areCheckoutLineItemPricesAvailable, createSubmissionLock } from "@/lib/checkout-attempt";
+import { areCheckoutLineItemPricesAvailable } from "@/lib/checkout-attempt";
 import {
   getActiveCartId,
   listPaymentProviders,
   listShippingOptions,
-  placeOrder,
   retrieveCheckoutCart,
   saveCheckoutAddress,
   selectShippingOption,
   storeOrderReceipt,
   type CheckoutAddress,
   type CheckoutCart,
+  type OrderReceipt,
   type PaymentProvider,
   type ShippingOption,
 } from "@/lib/checkout";
+import { isMercadoPagoProviderId } from "@/lib/payments/mercado-pago-contract";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -64,11 +64,9 @@ function CheckoutPage() {
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
   const [shippingOptionId, setShippingOptionId] = useState("");
   const [paymentProviders, setPaymentProviders] = useState<PaymentProvider[]>([]);
-  const [paymentProviderId, setPaymentProviderId] = useState("");
   const [isBooting, setIsBooting] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const orderSubmissionLock = useRef(createSubmissionLock());
 
   useEffect(() => {
     const cartId = getActiveCartId();
@@ -78,9 +76,17 @@ function CheckoutPage() {
     }
 
     void retrieveCheckoutCart(cartId)
-      .then((activeCart) => {
+      .then(async (activeCart) => {
         setCart(activeCart);
         setEmail(activeCart.email ?? "");
+        const hasRecoverablePayment = activeCart.payment_collection?.payment_sessions?.some(
+          (session) => isMercadoPagoProviderId(session.provider_id),
+        );
+        if (hasRecoverablePayment) {
+          const providers = await listPaymentProviders();
+          setPaymentProviders(providers);
+          setStep("payment");
+        }
       })
       .catch(() => setError("Não foi possível carregar seu checkout. Tente novamente."))
       .finally(() => setIsBooting(false));
@@ -143,7 +149,6 @@ function CheckoutPage() {
       const providers = await listPaymentProviders();
       setCart(updatedCart);
       setPaymentProviders(providers);
-      setPaymentProviderId(providers[0]?.id ?? "");
       if (!providers.length) {
         setError(
           "Não há uma forma de pagamento disponível no momento. Tente novamente mais tarde.",
@@ -158,33 +163,7 @@ function CheckoutPage() {
     }
   };
 
-  const submitOrder = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!cart || !paymentProviderId) return;
-    if (!orderSubmissionLock.current.tryAcquire()) return;
-
-    setError("");
-    setIsSubmitting(true);
-    let order;
-    try {
-      order = await placeOrder(cart.id, paymentProviderId);
-    } catch {
-      setError(
-        "Não foi possível confirmar o pedido. Seu carrinho foi preservado para você tentar novamente.",
-      );
-      try {
-        setCart(await retrieveCheckoutCart(cart.id));
-      } catch {
-        // Keep the last known cart visible and stored so the customer can retry or reload.
-      } finally {
-        orderSubmissionLock.current.release();
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
-    // A returned order is definitive: keep the lock held so a later UI/storage/navigation
-    // failure can never turn the same logical submission into another finalize attempt.
+  const finishOrder = async (order: OrderReceipt) => {
     storeOrderReceipt(order);
     markCartCompleted();
     await navigate({
@@ -315,16 +294,14 @@ function CheckoutPage() {
             />
           )}
           {step === "payment" && (
-            <PaymentForm
-              providers={paymentProviders}
-              selectedId={paymentProviderId}
-              isSubmitting={isSubmitting}
+            <MercadoPagoCheckout
+              cart={cart}
+              availableProviderIds={paymentProviders.map((provider) => provider.id)}
               onBack={() => {
                 setError("");
                 setStep("shipping");
               }}
-              onSelect={setPaymentProviderId}
-              onSubmit={submitOrder}
+              onOrder={finishOrder}
             />
           )}
         </section>
@@ -339,7 +316,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
   const steps: Array<{ id: CheckoutStep; label: string }> = [
     { id: "address", label: "Endereço" },
     { id: "shipping", label: "Recebimento" },
-    { id: "payment", label: "Pedido" },
+    { id: "payment", label: "Pagamento" },
   ];
   const currentIndex = steps.findIndex((step) => step.id === current);
 
@@ -560,79 +537,6 @@ function ShippingForm({
   );
 }
 
-interface PaymentFormProps {
-  providers: PaymentProvider[];
-  selectedId: string;
-  isSubmitting: boolean;
-  onBack: () => void;
-  onSelect: (id: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}
-
-function PaymentForm({
-  providers,
-  selectedId,
-  isSubmitting,
-  onBack,
-  onSelect,
-  onSubmit,
-}: PaymentFormProps) {
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="border border-bunker-graphite bg-bunker-charcoal p-5 md:p-7"
-    >
-      <div className="flex items-center gap-3 border-b border-bunker-graphite pb-5">
-        <ReceiptText className="h-6 w-6 text-bunker-tan" />
-        <div>
-          <h2 className="font-display text-xl uppercase tracking-wider">Registro do pedido</h2>
-          <p className="text-xs text-bunker-text-secondary">
-            Nenhuma cobrança é realizada neste checkout.
-          </p>
-        </div>
-      </div>
-      <div className="mt-5 space-y-3">
-        {providers.map((provider) => (
-          <label
-            key={provider.id}
-            className={`flex cursor-pointer items-start gap-4 border p-4 transition-colors ${
-              selectedId === provider.id
-                ? "border-bunker-tan bg-bunker-tan/5"
-                : "border-bunker-graphite bg-bunker-black hover:border-bunker-tan/60"
-            }`}
-          >
-            <input
-              type="radio"
-              name="payment-provider"
-              value={provider.id}
-              checked={selectedId === provider.id}
-              onChange={() => onSelect(provider.id)}
-              className="mt-1 accent-bunker-tan"
-            />
-            <span>
-              <span className="block text-sm font-semibold capitalize">
-                {getPaymentOptionLabel(provider.id)}
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-bunker-text-secondary">
-                A Bunker 81 entrará em contato para combinar o pagamento.
-              </span>
-            </span>
-          </label>
-        ))}
-      </div>
-      <div className="mt-5 flex items-start gap-3 border border-bunker-military-light/40 bg-bunker-military/10 p-4">
-        <BadgeInfo className="mt-0.5 h-5 w-5 shrink-0 text-bunker-military-light" />
-        <p className="text-xs leading-relaxed text-bunker-text-secondary">
-          Ao confirmar, seu pedido será registrado, mas o pagamento continuará pendente. Se não for
-          possível registrá-lo, o carrinho será preservado para uma nova tentativa.
-        </p>
-      </div>
-      <SecondaryButton onClick={onBack}>Editar recebimento</SecondaryButton>
-      <PrimaryButton isSubmitting={isSubmitting}>Registrar pedido</PrimaryButton>
-    </form>
-  );
-}
-
 function Field({
   label,
   className = "",
@@ -728,7 +632,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
       </dl>
       <div className="mt-5 flex items-center justify-center gap-2 text-[11px] uppercase tracking-wider text-bunker-text-secondary">
         <ReceiptText className="h-3.5 w-3.5 text-bunker-military-light" />
-        Confira os dados antes de registrar o pedido
+        Confira os dados antes de confirmar o pagamento
       </div>
     </aside>
   );

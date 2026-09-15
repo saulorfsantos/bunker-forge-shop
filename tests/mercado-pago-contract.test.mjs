@@ -1,0 +1,297 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  MERCADO_PAGO_CARD_PROVIDER_ID,
+  MERCADO_PAGO_PIX_PROVIDER_ID,
+  PaymentContractError,
+  PaymentPollingAbortedError,
+  PaymentPollingTimeoutError,
+  buildCardSessionData,
+  buildPixSessionData,
+  classifyPaymentSession,
+  clearEphemeralCardToken,
+  extractPixPresentation,
+  findRecoverablePaymentSession,
+  methodToProviderId,
+  pollPaymentSession,
+  providerIdToMethod,
+  validateThreeDSChallenge,
+} from "../src/lib/payments/mercado-pago-contract.ts";
+
+const pixSession = (providerStatus, medusaStatus = "pending_authorization", data = {}) => ({
+  provider_id: MERCADO_PAGO_PIX_PROVIDER_ID,
+  status: medusaStatus,
+  data: { status: providerStatus, ...data },
+});
+
+const cardSession = (providerStatus, medusaStatus = "pending_authorization", data = {}) => ({
+  provider_id: MERCADO_PAGO_CARD_PROVIDER_ID,
+  status: medusaStatus,
+  data: { status: providerStatus, ...data },
+});
+
+test("payment selection maps Pix, card, then Pix to the real provider ids", () => {
+  const selections = ["pix", "card", "pix"].map(methodToProviderId);
+  assert.deepEqual(selections, [
+    MERCADO_PAGO_PIX_PROVIDER_ID,
+    MERCADO_PAGO_CARD_PROVIDER_ID,
+    MERCADO_PAGO_PIX_PROVIDER_ID,
+  ]);
+  assert.equal(providerIdToMethod(MERCADO_PAGO_CARD_PROVIDER_ID), "card");
+  assert.equal(providerIdToMethod("pp_unrelated"), null);
+});
+
+test("card payload is allowlisted, requires its token, and clears it after use", () => {
+  const brickOutput = {
+    token: "ephemeral-token",
+    transaction_amount: "1990",
+    installments: "2",
+    payment_method_id: "visa",
+    issuer_id: "issuer-local",
+    unexpected_field: "must-not-pass",
+    payer: {
+      email: "buyer@example.invalid",
+      identification: { type: "CPF", number: "must-not-pass" },
+      unexpected_name: "must-not-pass",
+    },
+    three_ds_info: { external_resource_url: "must-not-pass" },
+  };
+
+  const payload = buildCardSessionData(brickOutput, 1990);
+  assert.deepEqual(payload, {
+    token: "ephemeral-token",
+    payment_method_id: "visa",
+    installments: 2,
+    issuer_id: "issuer-local",
+    payer_email: "buyer@example.invalid",
+  });
+  assert.deepEqual(Object.keys(payload).sort(), [
+    "installments",
+    "issuer_id",
+    "payer_email",
+    "payment_method_id",
+    "token",
+  ]);
+  clearEphemeralCardToken(brickOutput);
+  assert.equal(brickOutput.token, "");
+  assert.throws(
+    () => buildCardSessionData({ ...brickOutput, transaction_amount: 1991 }, 1990),
+    PaymentContractError,
+  );
+  assert.throws(
+    () =>
+      buildCardSessionData(
+        { transaction_amount: 1990, installments: 1, payment_method_id: "visa" },
+        1990,
+      ),
+    PaymentContractError,
+  );
+});
+
+test("Pix payload contains only backend-approved payer fields", () => {
+  assert.deepEqual(buildPixSessionData("buyer@example.invalid", "000.000.000-00"), {
+    payer_email: "buyer@example.invalid",
+    payer_identification: { type: "CPF", number: "00000000000" },
+  });
+  assert.throws(() => buildPixSessionData("buyer@example.invalid", "short"), PaymentContractError);
+});
+
+test("Pix pending data renders only values returned by the backend", () => {
+  const presentation = extractPixPresentation(
+    pixSession("pending", "pending_authorization", {
+      date_of_expiration: "2030-01-01T12:00:00.000Z",
+      point_of_interaction: {
+        transaction_data: {
+          qr_code: "pix-payload-local",
+          qr_code_base64: "cGl4",
+          ticket_url: "https://payments.example.test/ticket",
+        },
+      },
+    }),
+  );
+  assert.deepEqual(presentation, {
+    qrCode: "pix-payload-local",
+    qrCodeBase64: "cGl4",
+    ticketUrl: "https://payments.example.test/ticket",
+    expiresAt: "2030-01-01T12:00:00.000Z",
+  });
+  assert.throws(
+    () =>
+      extractPixPresentation(
+        pixSession("pending", "pending_authorization", {
+          point_of_interaction: { transaction_data: {} },
+        }),
+      ),
+    PaymentContractError,
+  );
+});
+
+test("3DS accepts only complete backend-shaped HTTPS continuation data", () => {
+  assert.deepEqual(
+    validateThreeDSChallenge({
+      external_resource_url: "https://acs.example.test/challenge",
+      creq: "abc_DEF-123",
+    }),
+    {
+      externalResourceUrl: "https://acs.example.test/challenge",
+      hostname: "acs.example.test",
+      creq: "abc_DEF-123",
+    },
+  );
+  for (const external_resource_url of [
+    "http://acs.example.test/challenge",
+    "https://localhost/challenge",
+    "https://127.0.0.1/challenge",
+    "https://user:pass@acs.example.test/challenge",
+  ]) {
+    assert.throws(
+      () => validateThreeDSChallenge({ external_resource_url, creq: "abc_DEF-123" }),
+      PaymentContractError,
+    );
+  }
+  assert.throws(
+    () => validateThreeDSChallenge({ external_resource_url: "https://acs.example.test/challenge" }),
+    PaymentContractError,
+  );
+});
+
+test("a 3DS challenge never classifies as approved and must come from card session data", () => {
+  const challenge = classifyPaymentSession(
+    cardSession("pending", "pending_authorization", {
+      status_detail: "pending_challenge",
+      three_ds_info: {
+        external_resource_url: "https://acs.example.test/challenge",
+        creq: "abc_DEF-123",
+      },
+    }),
+  );
+  assert.equal(challenge.outcome, "challenge");
+  assert.equal(challenge.terminal, false);
+  assert.throws(
+    () =>
+      classifyPaymentSession(
+        cardSession("authorized", "authorized", {
+          status_detail: "pending_challenge",
+          three_ds_info: {
+            external_resource_url: "https://acs.example.test/challenge",
+            creq: "abc_DEF-123",
+          },
+        }),
+      ),
+    PaymentContractError,
+  );
+  assert.deepEqual(
+    classifyPaymentSession({
+      provider_id: MERCADO_PAGO_CARD_PROVIDER_ID,
+      status: "pending_authorization",
+      data: { status: "pending" },
+      three_ds_info: {
+        external_resource_url: "https://client.example.test/challenge",
+        creq: "client_supplied",
+      },
+    }),
+    { terminal: false, outcome: "pending", status: "pending" },
+  );
+});
+
+test("backend payment status controls terminal success and failure", () => {
+  assert.deepEqual(classifyPaymentSession(cardSession("authorized", "authorized")), {
+    terminal: true,
+    outcome: "succeeded",
+    status: "authorized",
+  });
+  assert.deepEqual(classifyPaymentSession(pixSession("rejected", "error")), {
+    terminal: true,
+    outcome: "failed",
+    status: "rejected",
+  });
+  assert.throws(
+    () => classifyPaymentSession(cardSession("rejected", "authorized")),
+    PaymentContractError,
+  );
+});
+
+test("polling stops on backend success and backend failure", async () => {
+  for (const terminalSession of [
+    cardSession("authorized", "authorized"),
+    cardSession("rejected", "error"),
+  ]) {
+    const responses = [cardSession("pending"), terminalSession];
+    let calls = 0;
+    const result = await pollPaymentSession({
+      retrieveSession: async () => {
+        calls += 1;
+        return responses.shift();
+      },
+      intervalMs: 0,
+      maxAttempts: 2,
+      sleep: async () => {},
+    });
+    assert.equal(result.state.terminal, true);
+    assert.equal(calls, 2);
+  }
+});
+
+test("polling has a bounded timeout", async () => {
+  let calls = 0;
+  await assert.rejects(
+    pollPaymentSession({
+      retrieveSession: async () => {
+        calls += 1;
+        return cardSession("pending");
+      },
+      intervalMs: 0,
+      maxAttempts: 2,
+      sleep: async () => {},
+    }),
+    PaymentPollingTimeoutError,
+  );
+  assert.equal(calls, 2);
+});
+
+test("method switch or unmount can abort polling cleanup", async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  await assert.rejects(
+    pollPaymentSession({
+      signal: controller.signal,
+      retrieveSession: async () => {
+        calls += 1;
+        return cardSession("pending");
+      },
+      intervalMs: 0,
+      maxAttempts: 3,
+      sleep: async (_milliseconds, signal) => {
+        controller.abort();
+        if (signal?.aborted) throw new PaymentPollingAbortedError();
+      },
+    }),
+    PaymentPollingAbortedError,
+  );
+  assert.equal(calls, 1);
+});
+
+test("refresh recovery is reconstructed from the single backend session", () => {
+  const pendingPix = pixSession("pending", "pending_authorization", {
+    point_of_interaction: { transaction_data: { qr_code: "pix-payload-local" } },
+  });
+  assert.equal(
+    findRecoverablePaymentSession({ id: "pay_col_local", payment_sessions: [pendingPix] }),
+    pendingPix,
+  );
+  assert.equal(
+    findRecoverablePaymentSession({
+      id: "pay_col_local",
+      payment_sessions: [cardSession("rejected", "error")],
+    }),
+    null,
+  );
+  assert.throws(
+    () =>
+      findRecoverablePaymentSession({
+        id: "pay_col_local",
+        payment_sessions: [pendingPix, cardSession("pending")],
+      }),
+    PaymentContractError,
+  );
+});

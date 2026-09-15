@@ -1,19 +1,19 @@
 import Medusa from "@medusajs/js-sdk";
 
-const baseUrl = import.meta.env.VITE_MEDUSA_BACKEND_URL;
-const publishableKey = import.meta.env.VITE_MEDUSA_PUBLISHABLE_KEY;
+export const MEDUSA_BACKEND_URL = import.meta.env.VITE_MEDUSA_BACKEND_URL;
+export const MEDUSA_PUBLISHABLE_KEY = import.meta.env.VITE_MEDUSA_PUBLISHABLE_KEY;
 
-if (!baseUrl) {
+if (!MEDUSA_BACKEND_URL) {
   throw new Error("VITE_MEDUSA_BACKEND_URL is not defined");
 }
 
-if (!publishableKey) {
+if (!MEDUSA_PUBLISHABLE_KEY) {
   throw new Error("VITE_MEDUSA_PUBLISHABLE_KEY is not defined");
 }
 
 export const sdk = new Medusa({
-  baseUrl,
-  publishableKey,
+  baseUrl: MEDUSA_BACKEND_URL,
+  publishableKey: MEDUSA_PUBLISHABLE_KEY,
 });
 
 /** Região Brasil (BRL) — necessária para calculated_price nos produtos. */

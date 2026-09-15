@@ -47,16 +47,16 @@ src/
 
 Paleta semântica em `src/styles.css` (oklch). Use tokens via classes Tailwind:
 
-| Token              | Uso                                         |
-| ------------------ | ------------------------------------------- |
-| `bunker-black`     | Fundo principal                             |
-| `bunker-charcoal`  | Cards, headers de seção                     |
-| `bunker-graphite`  | Bordas, divisores, hover                    |
-| `bunker-tan`       | CTA primário, preços, links ativos          |
-| `bunker-tan-dark`  | Hover do Tan                                |
-| `bunker-military`  | Badges promocionais, selos                  |
-| `bunker-danger`    | Badges de desconto alto, alertas            |
-| `bunker-text-*`    | Tipografia primária / secundária            |
+| Token             | Uso                                |
+| ----------------- | ---------------------------------- |
+| `bunker-black`    | Fundo principal                    |
+| `bunker-charcoal` | Cards, headers de seção            |
+| `bunker-graphite` | Bordas, divisores, hover           |
+| `bunker-tan`      | CTA primário, preços, links ativos |
+| `bunker-tan-dark` | Hover do Tan                       |
+| `bunker-military` | Badges promocionais, selos         |
+| `bunker-danger`   | Badges de desconto alto, alertas   |
+| `bunker-text-*`   | Tipografia primária / secundária   |
 
 Fontes: **Oswald** (display/títulos) + **Inter** (corpo) via Google Fonts.
 
@@ -65,13 +65,13 @@ Fontes: **Oswald** (display/títulos) + **Inter** (corpo) via Google Fonts.
 Toda a camada de dados está centralizada em `src/data/mockData.ts` e exposta por funções puras:
 
 ```ts
-getProductById(id)
-getProductsByCategory(slug)
-searchProducts(query)
-getFeaturedProducts()
-getPromoProducts()
-getGearProducts()
-getCategoryBySlug(slug)
+getProductById(id);
+getProductsByCategory(slug);
+searchProducts(query);
+getFeaturedProducts();
+getPromoProducts();
+getGearProducts();
+getCategoryBySlug(slug);
 ```
 
 Para migrar para Supabase:
@@ -91,3 +91,22 @@ npm run dev      # dev server
 npm run build    # build de produção
 npm run preview  # preview do build
 ```
+
+## Configuração do checkout
+
+O storefront usa somente configurações públicas de browser:
+
+```bash
+VITE_MEDUSA_BACKEND_URL=
+VITE_MEDUSA_PUBLISHABLE_KEY=
+VITE_MERCADO_PAGO_PUBLIC_KEY=
+```
+
+Copie `.env.example` para um arquivo local ignorado pelo Git e preencha os valores do ambiente em
+que o storefront será executado. A ausência de `VITE_MERCADO_PAGO_PUBLIC_KEY` bloqueia o formulário
+de cartão de forma segura. Access token e webhook secret do Mercado Pago pertencem exclusivamente ao
+backend e nunca devem ser configurados no storefront.
+
+O checkout usa as rotas Store API nativas para obter/criar a payment collection, iniciar uma payment
+session, consultar o carrinho e completar o carrinho após confirmação autoritativa do pagamento. Não
+há endpoint custom no browser.

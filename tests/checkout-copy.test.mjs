@@ -8,6 +8,10 @@ import {
 } from "../src/lib/checkout-copy.ts";
 
 const checkoutSource = readFileSync(new URL("../src/routes/checkout.tsx", import.meta.url), "utf8");
+const paymentSource = readFileSync(
+  new URL("../src/components/checkout/MercadoPagoCheckout.tsx", import.meta.url),
+  "utf8",
+);
 const confirmationSource = readFileSync(
   new URL("../src/routes/order-confirmation.tsx", import.meta.url),
   "utf8",
@@ -15,6 +19,8 @@ const confirmationSource = readFileSync(
 const cartSource = readFileSync(new URL("../src/routes/cart.tsx", import.meta.url), "utf8");
 
 test("payment options use customer-facing labels without exposing internal identifiers", () => {
+  assert.equal(getPaymentOptionLabel("pp_mercadopago-pix_mercadopago"), "Pix");
+  assert.equal(getPaymentOptionLabel("pp_mercadopago-card_mercadopago"), "Cartão");
   assert.equal(getPaymentOptionLabel("pp_system_default"), "Pagamento a combinar");
   assert.equal(getPaymentOptionLabel("pp_internal_example"), "Pagamento a combinar");
 });
@@ -37,21 +43,20 @@ test("order identification never falls back to the internal order id", () => {
   assert.equal(getOrderDisplayLabel(undefined), "Identificação indisponível");
 });
 
-test("checkout copy states that no charge occurs and does not suggest a later card step", () => {
-  assert.match(checkoutSource, /Nenhuma cobrança é realizada neste checkout\./);
-  assert.match(checkoutSource, /o pagamento continuará pendente/);
-  assert.doesNotMatch(checkoutSource, /dados de cartão/i);
-  assert.doesNotMatch(checkoutSource, /processado com segurança/i);
-  assert.doesNotMatch(checkoutSource, /Checkout seguro/i);
-  assert.doesNotMatch(checkoutSource, /Ambiente seguro/i);
-  assert.doesNotMatch(checkoutSource, /CreditCard|LockKeyhole|ShieldCheck/);
+test("checkout copy presents Pix and browser-tokenized card as the primary payment path", () => {
+  assert.match(checkoutSource, /MercadoPagoCheckout/);
+  assert.match(paymentSource, /label="Pix"/);
+  assert.match(paymentSource, /label="Cartão"/);
+  assert.match(paymentSource, /Tokenização no navegador/);
+  assert.doesNotMatch(checkoutSource, /pagamento continuará pendente/i);
+  assert.doesNotMatch(paymentSource, /entrará em contato para combinar o pagamento/i);
 });
 
-test("confirmation distinguishes a registered order from an unpaid order", () => {
+test("confirmation is shown only after backend-confirmed payment and cart completion", () => {
   assert.match(confirmationSource, /Pedido registrado/);
-  assert.match(confirmationSource, /Nenhuma cobrança foi realizada neste momento\./);
-  assert.match(confirmationSource, /entrará em contato para combinar o pagamento/);
-  assert.doesNotMatch(confirmationSource, /Pedido confirmado com segurança/);
+  assert.match(confirmationSource, /Pagamento confirmado e pedido registrado\./);
+  assert.doesNotMatch(confirmationSource, /Nenhuma cobrança foi realizada/i);
+  assert.doesNotMatch(confirmationSource, /combinar o pagamento/i);
   assert.doesNotMatch(confirmationSource, /Referência: \{orderId\}/);
 });
 
