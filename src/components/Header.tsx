@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Heart, Menu, X, ChevronDown } from "lucide-react";
 import logoShield from "@/assets/logo-shield.png";
 import { useCategories, useSearchProducts } from "@/hooks/useMedusaProducts";
 import { formatBRL } from "@/data/mockData";
@@ -94,25 +94,18 @@ export function Header() {
           />
 
           <div className="flex items-center gap-1 md:gap-3 ml-auto">
-            <button
-              type="button"
-              aria-label="Conta"
-              className="hidden sm:flex p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
-            >
-              <User className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              aria-label={`Favoritos (${favorites.length})`}
-              className="relative p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
-            >
-              <Heart className="w-5 h-5" />
-              {favorites.length > 0 && (
+            {favorites.length > 0 && (
+              <span
+                aria-label={`Favoritos salvos neste navegador (${favorites.length})`}
+                title="Favoritos salvos neste navegador"
+                className="relative p-2 text-bunker-text-primary"
+              >
+                <Heart className="w-5 h-5 fill-bunker-tan text-bunker-tan" />
                 <span className="absolute top-0 right-0 bg-bunker-tan text-bunker-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {favorites.length}
                 </span>
-              )}
-            </button>
+              </span>
+            )}
             <Link
               to="/cart"
               aria-label={`Carrinho (${itemCount})`}

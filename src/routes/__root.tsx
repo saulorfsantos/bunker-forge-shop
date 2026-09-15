@@ -35,16 +35,36 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Bunker 81 Airsoft — Onde a missão começa" },
-      { name: "description", content: "Loja online de Airsoft, armas de pressão e equipamentos táticos. Arsenal completo para operadores sérios." },
+      {
+        name: "description",
+        content:
+          "Catálogo online de Airsoft, armas de pressão e equipamentos táticos da Bunker 81.",
+      },
       { name: "author", content: "Bunker 81 Airsoft" },
       { property: "og:title", content: "Bunker 81 Airsoft — Onde a missão começa" },
-      { property: "og:description", content: "Loja online de Airsoft, armas de pressão e equipamentos táticos. Arsenal completo para operadores sérios." },
+      {
+        property: "og:description",
+        content:
+          "Catálogo online de Airsoft, armas de pressão e equipamentos táticos da Bunker 81.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Bunker 81 Airsoft — Onde a missão começa" },
-      { name: "twitter:description", content: "Loja online de Airsoft, armas de pressão e equipamentos táticos. Arsenal completo para operadores sérios." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Catálogo online de Airsoft, armas de pressão e equipamentos táticos da Bunker 81.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

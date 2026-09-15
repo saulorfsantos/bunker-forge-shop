@@ -118,13 +118,15 @@ function CheckoutPage() {
       setShippingOptionId(options[0]?.id ?? "");
       if (!options.length) {
         setError(
-          "Não há opções de frete disponíveis para este endereço. Revise os dados ou tente novamente mais tarde.",
+          "Não há opções de entrega ou retirada disponíveis para estes dados. Revise as informações ou tente novamente mais tarde.",
         );
         return;
       }
       setStep("shipping");
     } catch {
-      setError("Não foi possível consultar o frete. Revise o endereço e tente novamente.");
+      setError(
+        "Não foi possível consultar as opções de recebimento. Revise os dados e tente novamente.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -150,7 +152,7 @@ function CheckoutPage() {
       }
       setStep("payment");
     } catch {
-      setError("Não foi possível aplicar o frete. Tente novamente.");
+      setError("Não foi possível aplicar a opção de recebimento. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +198,37 @@ function CheckoutPage() {
       <Layout>
         <div className="mx-auto flex min-h-[55vh] max-w-lg items-center justify-center px-4">
           <LoaderCircle className="h-8 w-8 animate-spin text-bunker-tan" aria-label="Carregando" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!cart && error) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+          <ReceiptText className="mx-auto h-14 w-14 text-bunker-danger" />
+          <h1 className="mt-5 font-display text-3xl uppercase tracking-wider">
+            Não foi possível abrir o checkout
+          </h1>
+          <p role="alert" className="mt-3 text-sm text-bunker-text-secondary">
+            {error} Seu carrinho continua preservado.
+          </p>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="bg-bunker-tan px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+            >
+              Tentar novamente
+            </button>
+            <Link
+              to="/cart"
+              className="border border-bunker-graphite px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-text-primary transition-colors hover:border-bunker-tan hover:text-bunker-tan"
+            >
+              Voltar ao carrinho
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -305,7 +338,7 @@ function CheckoutPage() {
 function StepIndicator({ current }: { current: CheckoutStep }) {
   const steps: Array<{ id: CheckoutStep; label: string }> = [
     { id: "address", label: "Endereço" },
-    { id: "shipping", label: "Frete" },
+    { id: "shipping", label: "Recebimento" },
     { id: "payment", label: "Pedido" },
   ];
   const currentIndex = steps.findIndex((step) => step.id === current);
@@ -360,9 +393,9 @@ function AddressForm({
       <div className="flex items-center gap-3 border-b border-bunker-graphite pb-5">
         <MapPin className="h-6 w-6 text-bunker-tan" />
         <div>
-          <h2 className="font-display text-xl uppercase tracking-wider">Destino da entrega</h2>
+          <h2 className="font-display text-xl uppercase tracking-wider">Dados para recebimento</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Informe onde deseja receber seu pedido.
+            Informe seus dados para consultar entrega ou retirada em loja.
           </p>
         </div>
       </div>
@@ -458,7 +491,7 @@ function AddressForm({
           />
         </Field>
       </div>
-      <PrimaryButton isSubmitting={isSubmitting}>Consultar frete</PrimaryButton>
+      <PrimaryButton isSubmitting={isSubmitting}>Consultar opções</PrimaryButton>
     </form>
   );
 }
@@ -488,9 +521,9 @@ function ShippingForm({
       <div className="flex items-center gap-3 border-b border-bunker-graphite pb-5">
         <Truck className="h-6 w-6 text-bunker-tan" />
         <div>
-          <h2 className="font-display text-xl uppercase tracking-wider">Modalidade de frete</h2>
+          <h2 className="font-display text-xl uppercase tracking-wider">Entrega ou retirada</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Escolha a opção de entrega mais adequada para seu pedido.
+            Escolha uma opção disponível para receber seu pedido.
           </p>
         </div>
       </div>
@@ -522,7 +555,7 @@ function ShippingForm({
         ))}
       </div>
       <SecondaryButton onClick={onBack}>Editar endereço</SecondaryButton>
-      <PrimaryButton isSubmitting={isSubmitting}>Aplicar frete</PrimaryButton>
+      <PrimaryButton isSubmitting={isSubmitting}>Aplicar opção</PrimaryButton>
     </form>
   );
 }
@@ -594,7 +627,7 @@ function PaymentForm({
           possível registrá-lo, o carrinho será preservado para uma nova tentativa.
         </p>
       </div>
-      <SecondaryButton onClick={onBack}>Editar frete</SecondaryButton>
+      <SecondaryButton onClick={onBack}>Editar recebimento</SecondaryButton>
       <PrimaryButton isSubmitting={isSubmitting}>Registrar pedido</PrimaryButton>
     </form>
   );
@@ -679,7 +712,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-bunker-text-secondary">Frete</dt>
+          <dt className="text-bunker-text-secondary">Recebimento</dt>
           <dd>
             {typeof cart.shipping_total === "number"
               ? formatBRL(cart.shipping_total)

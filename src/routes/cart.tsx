@@ -170,8 +170,8 @@ function CartPage() {
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-bunker-text-secondary">Frete</dt>
-                <dd className="text-xs text-bunker-text-secondary">Calculado no checkout</dd>
+                <dt className="text-bunker-text-secondary">Recebimento</dt>
+                <dd className="text-xs text-bunker-text-secondary">Definido no checkout</dd>
               </div>
               <div className="border-t border-bunker-graphite pt-3 flex justify-between text-base">
                 <dt className="font-bold uppercase tracking-wider">Subtotal</dt>
@@ -180,7 +180,7 @@ function CartPage() {
                 </dd>
               </div>
               <p className="text-xs text-bunker-text-secondary">
-                O total final será confirmado após a seleção do frete e da forma de pagamento.
+                O total final será confirmado após a seleção da entrega ou retirada.
               </p>
             </dl>
             {totalPrice === null ? (
@@ -195,7 +195,7 @@ function CartPage() {
                 to="/checkout"
                 className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
               >
-                Finalizar Compra
+                Finalizar pedido
               </Link>
             )}
             <Link

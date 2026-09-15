@@ -12,6 +12,7 @@ const confirmationSource = readFileSync(
   new URL("../src/routes/order-confirmation.tsx", import.meta.url),
   "utf8",
 );
+const cartSource = readFileSync(new URL("../src/routes/cart.tsx", import.meta.url), "utf8");
 
 test("payment options use customer-facing labels without exposing internal identifiers", () => {
   assert.equal(getPaymentOptionLabel("pp_system_default"), "Pagamento a combinar");
@@ -52,4 +53,18 @@ test("confirmation distinguishes a registered order from an unpaid order", () =>
   assert.match(confirmationSource, /entrará em contato para combinar o pagamento/);
   assert.doesNotMatch(confirmationSource, /Pedido confirmado com segurança/);
   assert.doesNotMatch(confirmationSource, /Referência: \{orderId\}/);
+});
+
+test("checkout presents store pickup as a factual receiving option", () => {
+  assert.match(checkoutSource, /entrega ou retirada em loja/i);
+  assert.match(checkoutSource, /Entrega ou retirada/);
+  assert.match(checkoutSource, /Recebimento/);
+  assert.match(cartSource, /O total final será confirmado após a seleção da entrega ou retirada\./);
+  assert.doesNotMatch(cartSource, /Finalizar Compra/);
+});
+
+test("checkout bootstrap failure remains visible and states that the cart is preserved", () => {
+  assert.match(checkoutSource, /Não foi possível abrir o checkout/);
+  assert.match(checkoutSource, /Seu carrinho continua preservado\./);
+  assert.match(checkoutSource, /Tentar novamente/);
 });

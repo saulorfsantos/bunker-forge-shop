@@ -41,7 +41,7 @@ type Tab = "desc" | "specs" | "reviews";
 function ProductPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { data: product, isLoading, isError } = useProduct(id);
+  const { data: product, isLoading, isError, refetch } = useProduct(id);
   const { data: categories } = useCategories();
   const categoryId = product ? CATEGORY_HANDLE_TO_ID[product.category] : undefined;
   const relatedQuery = useProductsByCategory(categoryId ?? "", 9);
@@ -88,7 +88,29 @@ function ProductPage() {
     );
   }
 
-  if (isError || !product) {
+  if (isError) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+          <h1 className="font-display text-3xl uppercase tracking-wider">
+            Não foi possível carregar o produto
+          </h1>
+          <p className="mt-3 text-sm text-bunker-text-secondary">
+            Verifique sua conexão e tente novamente. Seu carrinho não foi alterado.
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-6 border border-bunker-tan px-5 py-2 text-xs font-bold uppercase tracking-wider text-bunker-tan transition-colors hover:bg-bunker-tan/10"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!product) {
     throw notFound();
   }
 
@@ -349,7 +371,7 @@ function ProductPage() {
           <div className="mt-12">
             <SectionTitle
               title="Produtos Relacionados"
-              subtitle="Operadores que escolheram este também levaram"
+              subtitle="Outros produtos desta categoria"
             />
             <ProductCarousel
               products={related}
