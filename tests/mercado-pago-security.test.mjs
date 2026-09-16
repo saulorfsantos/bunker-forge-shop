@@ -65,6 +65,14 @@ test("3DS iframe cannot declare success and backend polling owns final status", 
   assert.doesNotMatch(componentSource, />\s*\{challenge\.creq\}\s*</);
 });
 
+test("3DS POST originates from a no-referrer iframe document", () => {
+  assert.match(componentSource, /frameRef\.current\?\.contentDocument/);
+  assert.match(componentSource, /meta\.name = "referrer"/);
+  assert.match(componentSource, /meta\.content = "no-referrer"/);
+  assert.match(componentSource, /frameDocument\.body\.append\(form\)/);
+  assert.doesNotMatch(componentSource, /form\.setAttribute\("referrerpolicy"/);
+});
+
 test("Pix copy feedback never logs the copied payment payload", () => {
   assert.match(componentSource, /navigator\.clipboard\.writeText\(pix\.qrCode\)/);
   assert.match(componentSource, /Código copiado/);

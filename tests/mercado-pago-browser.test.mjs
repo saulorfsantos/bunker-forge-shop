@@ -1,10 +1,52 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createCardSubmitLifecycle,
   getMercadoPagoPublicKey,
   mountCardPaymentBrick,
 } from "../src/lib/payments/mercado-pago-browser.ts";
 import { PaymentContractError } from "../src/lib/payments/mercado-pago-contract.ts";
+
+test("card Brick unmount waits for an in-flight submit promise", async () => {
+  const lifecycle = createCardSubmitLifecycle();
+  let resolveSubmit;
+  let unmounts = 0;
+  const pendingSubmit = lifecycle.runSubmit(
+    () => new Promise((resolve) => (resolveSubmit = resolve)),
+  );
+  lifecycle.setController({
+    unmount: async () => {
+      unmounts += 1;
+    },
+  });
+
+  lifecycle.requestUnmount();
+  assert.equal(unmounts, 0);
+  resolveSubmit();
+  await pendingSubmit;
+  assert.equal(unmounts, 1);
+});
+
+test("card Brick cleanup waits for every overlapping SDK submit callback", async () => {
+  const lifecycle = createCardSubmitLifecycle();
+  const resolvers = [];
+  let unmounts = 0;
+  lifecycle.setController({
+    unmount: async () => {
+      unmounts += 1;
+    },
+  });
+  const first = lifecycle.runSubmit(() => new Promise((resolve) => resolvers.push(resolve)));
+  const second = lifecycle.runSubmit(() => new Promise((resolve) => resolvers.push(resolve)));
+
+  lifecycle.requestUnmount();
+  resolvers[1]();
+  await second;
+  assert.equal(unmounts, 0);
+  resolvers[0]();
+  await first;
+  assert.equal(unmounts, 1);
+});
 
 test("missing Mercado Pago public key fails closed before loading the SDK", async () => {
   let loaderCalls = 0;

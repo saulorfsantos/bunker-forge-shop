@@ -31,6 +31,43 @@ export type MercadoPagoConstructor = new (
 
 export type MercadoPagoSdkLoader = () => Promise<MercadoPagoConstructor>;
 
+export function createCardSubmitLifecycle() {
+  let controller: CardBrickController | undefined;
+  let pendingSubmits = 0;
+  let unmountRequested = false;
+  let unmounted = false;
+
+  const unmount = async () => {
+    if (!controller || unmounted) return;
+    unmounted = true;
+    try {
+      await controller.unmount();
+    } catch {
+      // Cleanup failures must not change the result of an already-settled card submit.
+    }
+  };
+
+  return {
+    setController(nextController: CardBrickController) {
+      controller = nextController;
+      if (unmountRequested && pendingSubmits === 0) void unmount();
+    },
+    async runSubmit<T>(submit: () => Promise<T>): Promise<T> {
+      pendingSubmits += 1;
+      try {
+        return await submit();
+      } finally {
+        pendingSubmits -= 1;
+        if (unmountRequested && pendingSubmits === 0) await unmount();
+      }
+    },
+    requestUnmount() {
+      unmountRequested = true;
+      if (pendingSubmits === 0) void unmount();
+    },
+  };
+}
+
 function readMercadoPagoConstructor(): MercadoPagoConstructor | null {
   const candidate = (globalThis as typeof globalThis & { MercadoPago?: unknown }).MercadoPago;
   return typeof candidate === "function" ? (candidate as MercadoPagoConstructor) : null;

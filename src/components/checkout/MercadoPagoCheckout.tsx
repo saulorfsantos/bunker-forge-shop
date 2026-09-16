@@ -24,7 +24,7 @@ import {
 import { createSubmissionLock } from "@/lib/checkout-attempt";
 import type { CheckoutCart, OrderReceipt } from "@/lib/checkout";
 import { MEDUSA_BACKEND_URL, MEDUSA_PUBLISHABLE_KEY } from "@/lib/medusa";
-import { createMercadoPagoStoreApi, PaymentApiError } from "@/lib/payments/mercado-pago-api";
+import { createMercadoPagoStoreApi } from "@/lib/payments/mercado-pago-api";
 import {
   MERCADO_PAGO_CARD_PROVIDER_ID,
   MERCADO_PAGO_PIX_PROVIDER_ID,
@@ -47,9 +47,16 @@ import {
   type ThreeDSChallenge,
 } from "@/lib/payments/mercado-pago-contract";
 import {
+  challengeBehaviorForIntent,
+  classifyPaymentError,
+  confirmPaymentMethodSwitch,
+  type PaymentErrorContext,
+  type PaymentPollingIntent,
+} from "@/lib/payments/mercado-pago-recovery";
+import {
+  createCardSubmitLifecycle,
   getMercadoPagoPublicKey,
   mountCardPaymentBrick,
-  type CardBrickController,
   type MercadoPagoSdkLoader,
 } from "@/lib/payments/mercado-pago-browser";
 
@@ -78,13 +85,6 @@ function errorMessage(error: unknown): string {
   return "Não foi possível continuar o pagamento. Tente novamente.";
 }
 
-function isFatalPaymentError(error: unknown): boolean {
-  return (
-    error instanceof PaymentContractError ||
-    (error instanceof PaymentApiError && !error.recoverable)
-  );
-}
-
 export function MercadoPagoCheckout({
   cart,
   availableProviderIds,
@@ -110,6 +110,7 @@ export function MercadoPagoCheckout({
   const pollingController = useRef<AbortController | null>(null);
   const submissionLock = useRef(createSubmissionLock());
   const completionLock = useRef(createSubmissionLock());
+  const activeSessionProvider = useRef<MercadoPagoProviderId | null>(null);
   const mounted = useRef(true);
 
   const cancelPolling = useCallback(() => {
@@ -117,10 +118,14 @@ export function MercadoPagoCheckout({
     pollingController.current = null;
   }, []);
 
-  const showError = useCallback((error: unknown) => {
+  const showError = useCallback((error: unknown, context?: PaymentErrorContext) => {
     if (error instanceof PaymentPollingAbortedError) return;
+    const errorContext =
+      context ?? (activeSessionProvider.current ? "active-session" : "preflight");
     setMessage(errorMessage(error));
-    setPhase(isFatalPaymentError(error) ? "fatal-error" : "recoverable-error");
+    setPhase(
+      classifyPaymentError(error, errorContext) === "fatal" ? "fatal-error" : "recoverable-error",
+    );
   }, []);
 
   const completeApprovedPayment = useCallback(async () => {
@@ -140,12 +145,16 @@ export function MercadoPagoCheckout({
 
   const applySession = useCallback(
     async (session: MercadoPagoPaymentSession, pollAfterPending: boolean) => {
+      if (providerIdToMethod(session.provider_id)) {
+        activeSessionProvider.current = session.provider_id as MercadoPagoProviderId;
+      }
       const state = classifyPaymentSession(session);
       if (state.outcome === "succeeded") {
         await completeApprovedPayment();
         return;
       }
       if (state.outcome === "failed") {
+        activeSessionProvider.current = null;
         setPhase("recoverable-error");
         setMessage(
           `O pagamento foi encerrado pelo backend (${state.status}). Inicie uma nova tentativa.`,
@@ -171,13 +180,14 @@ export function MercadoPagoCheckout({
   );
 
   const startPolling = useCallback(
-    (providerId: MercadoPagoProviderId, options: { continueThroughChallenge?: boolean } = {}) => {
+    (providerId: MercadoPagoProviderId, intent: PaymentPollingIntent) => {
       cancelPolling();
+      activeSessionProvider.current = providerId;
       const controller = new AbortController();
       pollingController.current = controller;
       void pollPaymentSession({
         signal: controller.signal,
-        stopOnChallenge: !options.continueThroughChallenge,
+        challengeBehavior: challengeBehaviorForIntent(intent),
         retrieveSession: () => api.retrievePaymentSession(cart.id, providerId, controller.signal),
         onUpdate: (session, state) => {
           if (!mounted.current || controller.signal.aborted) return;
@@ -210,7 +220,7 @@ export function MercadoPagoCheckout({
             );
             return;
           }
-          showError(error);
+          showError(error, "active-session");
         });
     },
     [api, applySession, cancelPolling, cart.id, showError],
@@ -218,10 +228,13 @@ export function MercadoPagoCheckout({
 
   const acceptSession = useCallback(
     async (session: MercadoPagoPaymentSession) => {
+      if (providerIdToMethod(session.provider_id)) {
+        activeSessionProvider.current = session.provider_id as MercadoPagoProviderId;
+      }
       const state = classifyPaymentSession(session);
       await applySession(session, true);
       if (state.outcome === "pending") {
-        startPolling(session.provider_id as MercadoPagoProviderId);
+        startPolling(session.provider_id as MercadoPagoProviderId, "monitor-pending");
       }
     },
     [applySession, startPolling],
@@ -267,8 +280,25 @@ export function MercadoPagoCheckout({
 
   const selectMethod = (nextMethod: MercadoPagoMethod) => {
     if (phase === "loading" || phase === "success") return;
+    if (nextMethod === method) return;
+    if (
+      !confirmPaymentMethodSwitch(
+        {
+          currentMethod: method,
+          nextMethod,
+          activeProviderId: activeSessionProvider.current,
+        },
+        () =>
+          window.confirm(
+            "Há uma cobrança Pix aguardando pagamento. Trocar para cartão abandonará essa cobrança e uma nova sessão será criada somente após sua confirmação. Deseja continuar?",
+          ),
+      )
+    ) {
+      return;
+    }
     cancelPolling();
     submissionLock.current.release();
+    activeSessionProvider.current = null;
     setMethod(nextMethod);
     setShouldMountCard(nextMethod === "card");
     setPix(null);
@@ -319,8 +349,8 @@ export function MercadoPagoCheckout({
           MERCADO_PAGO_CARD_PROVIDER_ID,
           data,
         );
-        setShouldMountCard(false);
         if (mounted.current) await acceptSession(session);
+        if (mounted.current) setShouldMountCard(false);
       } catch (error) {
         if (mounted.current) showError(error);
         throw error;
@@ -349,7 +379,7 @@ export function MercadoPagoCheckout({
   const retryStatus = () => {
     setPhase("pending");
     setMessage("Consultando novamente o estado no backend...");
-    startPolling(methodToProviderId(method), { continueThroughChallenge: method === "card" });
+    startPolling(methodToProviderId(method), "recover-session");
   };
 
   return (
@@ -425,7 +455,7 @@ export function MercadoPagoCheckout({
           onCheck={() => {
             setPhase("pending");
             setMessage("Aguardando o backend confirmar o resultado do 3DS...");
-            startPolling(MERCADO_PAGO_CARD_PROVIDER_ID, { continueThroughChallenge: true });
+            startPolling(MERCADO_PAGO_CARD_PROVIDER_ID, "post-challenge");
           }}
         />
       )}
@@ -654,7 +684,7 @@ function CardPaymentBrick({
     }
 
     let active = true;
-    let controller: CardBrickController | undefined;
+    const submitLifecycle = createCardSubmitLifecycle();
     void mountCardPaymentBrick({
       publicKey,
       containerId,
@@ -662,7 +692,7 @@ function CardPaymentBrick({
       email,
       loadSdk,
       onReady: () => active && callbacks.current.onReady(),
-      onSubmit: (formData) => callbacks.current.onSubmit(formData),
+      onSubmit: (formData) => submitLifecycle.runSubmit(() => callbacks.current.onSubmit(formData)),
       onError: () =>
         active &&
         callbacks.current.onFatal(
@@ -670,18 +700,14 @@ function CardPaymentBrick({
         ),
     })
       .then((mountedController) => {
-        if (!active) {
-          void mountedController.unmount();
-          return;
-        }
-        controller = mountedController;
+        submitLifecycle.setController(mountedController);
+        if (!active) submitLifecycle.requestUnmount();
       })
       .catch((error) => active && callbacks.current.onFatal(error));
 
     return () => {
       active = false;
-      void controller?.unmount();
-      controller = undefined;
+      submitLifecycle.requestUnmount();
     };
   }, [amount, containerId, disabled, email, loadSdk]);
 
@@ -706,23 +732,35 @@ function ThreeDSPanel({
 }) {
   const rawId = useId();
   const frameName = `mercado-pago-3ds-${rawId.replace(/[^A-Za-z0-9_-]/g, "")}`;
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const [started, setStarted] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   const startChallenge = () => {
-    const form = document.createElement("form");
-    const continuation = document.createElement("input");
+    const frameDocument = frameRef.current?.contentDocument;
+    if (!frameDocument?.body) {
+      setLaunchError("Não foi possível preparar a janela segura. Tente novamente.");
+      return;
+    }
+    // The navigation must originate in the iframe document: forms do not support
+    // referrerPolicy, while this document's meta policy applies to its POST navigation.
+    const meta = frameDocument.createElement("meta");
+    meta.name = "referrer";
+    meta.content = "no-referrer";
+    frameDocument.head.append(meta);
+    const form = frameDocument.createElement("form");
+    const continuation = frameDocument.createElement("input");
     form.method = "post";
     form.action = challenge.externalResourceUrl;
-    form.target = frameName;
-    form.setAttribute("referrerpolicy", "no-referrer");
     continuation.type = "hidden";
     continuation.name = "creq";
     continuation.value = challenge.creq;
     form.append(continuation);
-    document.body.append(form);
+    frameDocument.body.append(form);
     form.submit();
     continuation.value = "";
     form.remove();
+    setLaunchError(null);
     setStarted(true);
   };
 
@@ -747,12 +785,21 @@ function ThreeDSPanel({
         {started ? "Verificação iniciada" : "Iniciar verificação segura"}
       </button>
       <iframe
+        ref={frameRef}
         name={frameName}
         title={`Verificação 3DS em ${challenge.hostname}`}
         sandbox="allow-forms allow-scripts allow-same-origin"
         referrerPolicy="no-referrer"
+        srcDoc={
+          '<!doctype html><html><head><meta name="referrer" content="no-referrer"></head><body></body></html>'
+        }
         className="mt-4 h-[430px] w-full border border-bunker-graphite bg-white"
       />
+      {launchError && (
+        <p className="mt-2 text-xs text-bunker-danger" role="alert">
+          {launchError}
+        </p>
+      )}
       <button
         type="button"
         onClick={onCheck}

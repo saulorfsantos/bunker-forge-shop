@@ -71,6 +71,13 @@ export class PaymentContractError extends Error {
   }
 }
 
+export class PaymentSessionRecoveryError extends PaymentContractError {
+  constructor(message: string) {
+    super(message);
+    this.name = "PaymentSessionRecoveryError";
+  }
+}
+
 export class PaymentPollingTimeoutError extends Error {
   constructor(message = "O backend não confirmou o pagamento dentro do tempo limite.") {
     super(message);
@@ -381,14 +388,38 @@ export function findRecoverablePaymentSession(
   collection: MercadoPagoPaymentCollection | null | undefined,
 ): MercadoPagoPaymentSession | null {
   if (!collection?.payment_sessions) return null;
-  const candidates = collection.payment_sessions.filter((session) => {
-    if (!isMercadoPagoProviderId(session.provider_id)) return false;
-    return classifyPaymentSession(session).outcome !== "failed";
-  });
-  if (candidates.length > 1) {
-    throw new PaymentContractError("Há mais de uma tentativa de pagamento ativa no carrinho.");
+  if (!Array.isArray(collection.payment_sessions)) {
+    throw new PaymentSessionRecoveryError(
+      "O backend retornou uma lista de sessões inválida. Consulte novamente.",
+    );
   }
-  return candidates[0] ?? null;
+  const candidates: MercadoPagoPaymentSession[] = [];
+  let malformedSessions = 0;
+
+  for (const candidate of collection.payment_sessions as unknown[]) {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) continue;
+    const session = candidate as MercadoPagoPaymentSession;
+    if (!isMercadoPagoProviderId(session.provider_id)) continue;
+    try {
+      if (classifyPaymentSession(session).outcome !== "failed") candidates.push(session);
+    } catch (error) {
+      if (!(error instanceof PaymentContractError)) throw error;
+      malformedSessions += 1;
+    }
+  }
+
+  if (candidates.length > 1) {
+    throw new PaymentSessionRecoveryError(
+      "Há mais de uma tentativa de pagamento ativa no carrinho. Consulte o backend novamente.",
+    );
+  }
+  if (candidates[0]) return candidates[0];
+  if (malformedSessions > 0) {
+    throw new PaymentSessionRecoveryError(
+      "O backend retornou uma sessão de pagamento temporariamente incompleta. Consulte novamente.",
+    );
+  }
+  return null;
 }
 
 export const PAYMENT_POLL_INTERVAL_MS = 2_000;
@@ -420,7 +451,7 @@ export async function pollPaymentSession(options: {
   maxAttempts?: number;
   sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
   onUpdate?: (session: MercadoPagoPaymentSession, state: PaymentSessionState) => void;
-  stopOnChallenge?: boolean;
+  challengeBehavior?: "return" | "continue";
 }): Promise<{ session: MercadoPagoPaymentSession; state: PaymentSessionState }> {
   const intervalMs = options.intervalMs ?? PAYMENT_POLL_INTERVAL_MS;
   const maxAttempts = options.maxAttempts ?? PAYMENT_POLL_MAX_ATTEMPTS;
@@ -446,7 +477,10 @@ export async function pollPaymentSession(options: {
     const session = await options.retrieveSession();
     const state = classifyPaymentSession(session);
     options.onUpdate?.(session, state);
-    if (state.terminal || (options.stopOnChallenge && state.outcome === "challenge")) {
+    if (
+      state.terminal ||
+      ((options.challengeBehavior ?? "return") === "return" && state.outcome === "challenge")
+    ) {
       return { session, state };
     }
   }

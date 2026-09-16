@@ -102,10 +102,12 @@ VITE_MEDUSA_PUBLISHABLE_KEY=
 VITE_MERCADO_PAGO_PUBLIC_KEY=
 ```
 
-Copie `.env.example` para um arquivo local ignorado pelo Git e preencha os valores do ambiente em
-que o storefront será executado. A ausência de `VITE_MERCADO_PAGO_PUBLIC_KEY` bloqueia o formulário
-de cartão de forma segura. Access token e webhook secret do Mercado Pago pertencem exclusivamente ao
-backend e nunca devem ser configurados no storefront.
+Copie `.env.example` para `.env.local`, que é carregado automaticamente pelo Vite em dev/build e é
+explicitamente ignorado pelo Git, e preencha apenas os valores públicos do ambiente local. A public
+key TEST `VITE_MERCADO_PAGO_PUBLIC_KEY` é injetada no bundle em build/dev time: não a coloque no
+arquivo `.env` rastreado. A ausência dessa public key bloqueia o formulário de cartão de forma segura.
+Access token e webhook secret do Mercado Pago pertencem exclusivamente ao backend e **nunca** devem
+ser configurados ou expostos no storefront.
 
 O checkout usa as rotas Store API nativas para obter/criar a payment collection, iniciar uma payment
 session, consultar o carrinho e completar o carrinho após confirmação autoritativa do pagamento. Não

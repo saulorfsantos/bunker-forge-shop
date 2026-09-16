@@ -16,6 +16,8 @@ dist-ssr
 .test-output/
 .nitro
 *.local
+.env.local
+.env.*.local
 
 # Wrangler / Cloudflare
 .wrangler/
