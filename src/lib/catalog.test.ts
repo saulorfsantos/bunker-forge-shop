@@ -7,6 +7,11 @@ import {
   resolveSelectedVariant,
   type MedusaProduct,
 } from "./catalog.ts";
+import { mapLineItemToProduct } from "./cart-product.ts";
+import {
+  createLocalProductImageResolver,
+  createProductImageManifest,
+} from "./product-image-resolver.ts";
 
 const productBase: MedusaProduct = {
   id: "prod_test",
@@ -128,7 +133,17 @@ test("an unavailable variant price is not advertised for an available variant wi
   assert.equal(product.priceAvailable, false);
 });
 
-test("product images preserve backend order and use fallbacks only when no real image exists", () => {
+const localManifest = createProductImageManifest({
+  "../assets/products/produto-com-variantes/10.png": "/assets/10.png",
+  "../assets/products/produto-com-variantes/02.jpeg": "/assets/02.jpeg",
+  "../assets/products/produto-com-variantes/01.webp": "/assets/01.webp",
+  "../assets/products/prod_by_id/01.jpg": "/assets/by-id.jpg",
+  "../assets/products/produto-com-variantes/vector.svg": "/assets/vector.svg",
+  "../assets/products/produto-com-variantes/nested/03.jpg": "/assets/nested.jpg",
+});
+const resolveLocalImages = createLocalProductImageResolver(localManifest);
+
+test("Medusa images preserve backend order and win over local images", () => {
   assert.deepEqual(
     resolveProductImages(
       {
@@ -137,12 +152,104 @@ test("product images preserve backend order and use fallbacks only when no real 
         images: [{ url: "front.jpg" }, { url: "detail.jpg" }],
       },
       "placeholder.png",
+      resolveLocalImages,
     ),
     ["front.jpg", "detail.jpg"],
   );
+});
+
+test("Medusa thumbnail wins over local images", () => {
   assert.deepEqual(
-    resolveProductImages({ ...productBase, thumbnail: "thumbnail.jpg" }, "placeholder.png"),
+    resolveProductImages(
+      { ...productBase, thumbnail: "thumbnail.jpg" },
+      "placeholder.png",
+      resolveLocalImages,
+    ),
     ["thumbnail.jpg"],
   );
-  assert.deepEqual(resolveProductImages(productBase, "placeholder.png"), ["placeholder.png"]);
+});
+
+test("local images resolve by handle before the product id and sort 01, 02, 10", () => {
+  assert.equal(Object.getPrototypeOf(localManifest), null);
+  assert.deepEqual(resolveProductImages(productBase, "placeholder.png", resolveLocalImages), [
+    "/assets/01.webp",
+    "/assets/02.jpeg",
+    "/assets/10.png",
+  ]);
+});
+
+test("local images use the product id as an alias when the handle has no assets", () => {
+  assert.deepEqual(
+    resolveProductImages(
+      { ...productBase, id: "prod_by_id", handle: "handle-without-assets" },
+      "placeholder.png",
+      resolveLocalImages,
+    ),
+    ["/assets/by-id.jpg"],
+  );
+});
+
+test("placeholder is preserved when Medusa and the local manifest have no image", () => {
+  assert.deepEqual(
+    resolveProductImages(
+      { ...productBase, id: "missing", handle: "also-missing" },
+      "placeholder.png",
+      resolveLocalImages,
+    ),
+    ["placeholder.png"],
+  );
+});
+
+test("__proto__ never resolves an inherited manifest property", () => {
+  const resolver = createLocalProductImageResolver({});
+  assert.deepEqual(resolver({ handle: "__proto__" }), []);
+});
+
+test("constructor never resolves an inherited manifest property", () => {
+  const resolver = createLocalProductImageResolver({});
+  assert.deepEqual(resolver({ handle: "constructor" }), []);
+});
+
+test("cart products use the same local fallback by handle and by id", () => {
+  const byHandle = mapLineItemToProduct(
+    {
+      id: "item_handle",
+      product_id: "missing-id",
+      variant_id: "variant_handle",
+      quantity: 1,
+      product: { handle: "produto-com-variantes" },
+    },
+    "placeholder.png",
+    resolveLocalImages,
+  );
+  const byId = mapLineItemToProduct(
+    {
+      id: "item_id",
+      product_id: "prod_by_id",
+      variant_id: "variant_id",
+      quantity: 1,
+      product: { handle: "missing-handle" },
+    },
+    "placeholder.png",
+    resolveLocalImages,
+  );
+
+  assert.deepEqual(byHandle.images, ["/assets/01.webp", "/assets/02.jpeg", "/assets/10.png"]);
+  assert.deepEqual(byId.images, ["/assets/by-id.jpg"]);
+});
+
+test("cart products preserve the placeholder when no local fallback exists", () => {
+  const product = mapLineItemToProduct(
+    {
+      id: "item_missing",
+      product_id: "missing-id",
+      variant_id: "variant_missing",
+      quantity: 1,
+      product: { handle: "missing-handle" },
+    },
+    "placeholder.png",
+    resolveLocalImages,
+  );
+
+  assert.deepEqual(product.images, ["placeholder.png"]);
 });

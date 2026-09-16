@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import type { CartItem, Product } from "@/types/product";
 import { BRAZIL_REGION_ID, MEDUSA_CART_ID_KEY, sdk } from "@/lib/medusa";
 import placeholderImage from "@/assets/logo-shield.png";
+import { mapLineItemToProduct, type MedusaLineItem } from "@/lib/cart-product";
+import { resolveLocalProductImages } from "@/lib/product-images";
 
 interface CartContextValue {
   items: CartItem[];
@@ -26,27 +28,6 @@ interface CartContextValue {
   markCartCompleted: () => void;
   getProduct: (lineItemId: string) => Product | undefined;
 }
-
-type MedusaLineItem = {
-  id: string;
-  product_id?: string;
-  variant_id?: string;
-  quantity: number;
-  unit_price?: number;
-  title?: string;
-  thumbnail?: string | null;
-  product?: {
-    id?: string;
-    title?: string;
-    handle?: string;
-    thumbnail?: string | null;
-  };
-  variant?: {
-    id?: string;
-    title?: string | null;
-    sku?: string | null;
-  };
-};
 
 interface MedusaCartState {
   id: string;
@@ -99,47 +80,11 @@ function mapCartToItems(cart: MedusaCartState | null): CartItem[] {
     }));
 }
 
-function mapLineItemToProduct(lineItem: MedusaLineItem): Product {
-  const productId = lineItem.product_id ?? lineItem.product?.id ?? "";
-  const name = lineItem.title ?? lineItem.product?.title ?? "Produto";
-  const slug = lineItem.product?.handle ?? "";
-  const thumbnail = lineItem.thumbnail ?? lineItem.product?.thumbnail ?? null;
-  const priceAvailable = typeof lineItem.unit_price === "number";
-  const unitPrice = priceAvailable ? lineItem.unit_price! : 0;
-
-  return {
-    id: productId,
-    name,
-    slug,
-    category: "",
-    subcategory: "",
-    brand: "Bunker 81",
-    sku: lineItem.variant?.sku ?? "",
-    images: thumbnail ? [thumbnail] : [placeholderImage],
-    description: "",
-    specs: {},
-    costPrice: unitPrice,
-    price1: unitPrice,
-    price2: unitPrice,
-    price3: unitPrice,
-    currentPrice: unitPrice,
-    discountPercent: 0,
-    stock: 0,
-    isAvailable: true,
-    priceAvailable,
-    requiresVariantSelection: false,
-    isNew: false,
-    isPromo: false,
-    rating: 0,
-    reviewsCount: 0,
-    defaultVariantId: lineItem.variant_id,
-    variantTitle: lineItem.variant?.title ?? "",
-  };
-}
-
 function getProductFromCart(cart: MedusaCartState | null, lineItemId: string): Product | undefined {
   const lineItem = cart?.items?.find((item) => item.id === lineItemId);
-  return lineItem ? mapLineItemToProduct(lineItem) : undefined;
+  return lineItem
+    ? mapLineItemToProduct(lineItem, placeholderImage, resolveLocalProductImages)
+    : undefined;
 }
 
 function getTotalFromCart(cart: MedusaCartState | null): number | null {

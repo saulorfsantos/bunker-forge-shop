@@ -1,4 +1,5 @@
 import type { Product } from "../types/product.ts";
+import type { LocalProductImageResolver } from "./product-image-resolver.ts";
 
 export type MedusaCalculatedPrice = {
   calculated_amount?: number | null;
@@ -97,17 +98,27 @@ function getProductStock(variants: CatalogVariant[]): number | null {
   return variants.reduce((total, variant) => total + (variant.stock ?? 0), 0);
 }
 
-export function resolveProductImages(product: MedusaProduct, placeholderImage: string): string[] {
+export function resolveProductImages(
+  product: MedusaProduct,
+  placeholderImage: string,
+  resolveLocalImages?: LocalProductImageResolver,
+): string[] {
   const images = (product.images ?? [])
     .map((image) => image.url)
-    .filter((url): url is string => Boolean(url));
+    .filter((url): url is string => typeof url === "string" && url.trim().length > 0);
 
   if (images.length > 0) return images;
-  if (product.thumbnail) return [product.thumbnail];
+  if (product.thumbnail?.trim()) return [product.thumbnail];
+  const localImages = resolveLocalImages?.({ handle: product.handle, id: product.id }) ?? [];
+  if (localImages.length > 0) return [...localImages];
   return [placeholderImage];
 }
 
-export function mapMedusaProduct(product: MedusaProduct, placeholderImage: string): Product {
+export function mapMedusaProduct(
+  product: MedusaProduct,
+  placeholderImage: string,
+  resolveLocalImages?: LocalProductImageResolver,
+): Product {
   const variants = (product.variants ?? []).map(mapMedusaVariant);
   const displayVariant = selectDisplayVariant(variants);
   const price = displayVariant?.currentPrice ?? 0;
@@ -126,7 +137,7 @@ export function mapMedusaProduct(product: MedusaProduct, placeholderImage: strin
     brand: "Bunker 81",
     sku: displayVariant?.sku ?? "",
     defaultVariantId: hasSinglePurchasableVariant ? variants[0].id : undefined,
-    images: resolveProductImages(product, placeholderImage),
+    images: resolveProductImages(product, placeholderImage, resolveLocalImages),
     description: product.description ?? "",
     specs: {},
     costPrice: price,

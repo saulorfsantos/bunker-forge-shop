@@ -92,6 +92,22 @@ npm run build    # build de produção
 npm run preview  # preview do build
 ```
 
+## Imagens locais de produto
+
+Quando um produto do Medusa não tiver `images` nem `thumbnail`, o storefront procura imagens locais
+primeiro pelo `handle` e depois pelo `product.id`. Para adicionar fotos, use o identificador escolhido
+como nome da pasta:
+
+```bash
+mkdir -p src/assets/products/<handle-ou-prod-id>
+# copiar para a pasta, em ordem alfabética zero-padded:
+# 01.webp  02.webp  03.webp
+npm run build
+```
+
+Também são aceitos `.jpg`, `.jpeg` e `.png`. `01` é o thumbnail e os demais arquivos formam a
+galeria. Não é necessário editar código; o manifest é gerado pelo Vite durante o build.
+
 ## Configuração do checkout
 
 O storefront usa somente configurações públicas de browser:

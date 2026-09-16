@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BRAZIL_REGION_ID, PRODUCT_LIST_FIELDS, sdk } from "@/lib/medusa";
 import type { Category, Product } from "@/types/product";
 import placeholderImage from "@/assets/logo-shield.png";
+import { resolveLocalProductImages } from "@/lib/product-images";
 import {
   mapMedusaProduct,
   mapMedusaVariant,
@@ -59,11 +60,11 @@ const CATEGORY_ICON_BY_HANDLE: Record<string, Category["icon"]> = {
 };
 
 export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDetail {
-  const base = mapMedusaProduct(product, placeholderImage);
+  const base = mapMedusaProduct(product, placeholderImage, resolveLocalProductImages);
 
   return {
     ...base,
-    images: resolveProductImages(product, placeholderImage),
+    images: resolveProductImages(product, placeholderImage, resolveLocalProductImages),
     variants: (product.variants ?? []).map(mapMedusaVariant),
     options: (product.options ?? []).map((option) => ({
       id: option.id,
@@ -91,7 +92,7 @@ async function fetchProducts(options: { limit?: number; categoryId?: string }) {
   });
 
   return (products as MedusaProduct[]).map((product) =>
-    mapMedusaProduct(product, placeholderImage),
+    mapMedusaProduct(product, placeholderImage, resolveLocalProductImages),
   );
 }
 
@@ -104,7 +105,7 @@ async function fetchSearchProducts(query: string, limit = 50) {
   });
 
   return (products as MedusaProduct[]).map((product) =>
-    mapMedusaProduct(product, placeholderImage),
+    mapMedusaProduct(product, placeholderImage, resolveLocalProductImages),
   );
 }
 
