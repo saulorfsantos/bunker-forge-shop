@@ -14,7 +14,9 @@ import {
   extractPixPresentation,
   findRecoverablePaymentSession,
   methodToProviderId,
+  normalizeCpfInput,
   pollPaymentSession,
+  preparePixSubmission,
   providerIdToMethod,
   validateThreeDSChallenge,
 } from "../src/lib/payments/mercado-pago-contract.ts";
@@ -101,6 +103,33 @@ test("Pix payload contains only backend-approved payer fields", () => {
     payer_identification: { type: "CPF", number: "00000000000" },
   });
   assert.throws(() => buildPixSessionData("buyer@example.invalid", "short"), PaymentContractError);
+});
+
+test("Pix CPF preparation rejects 10 or 12 digits without producing session data", () => {
+  for (const cpf of ["1234567890", "123456789012"]) {
+    const preparation = preparePixSubmission("buyer@example.invalid", cpf);
+    assert.deepEqual(preparation, {
+      ready: false,
+      normalizedCpf: cpf,
+      error: "Informe um CPF com 11 dígitos para gerar o Pix.",
+    });
+    assert.equal("data" in preparation, false);
+  }
+});
+
+test("Pix CPF input keeps digits only, normalizes formatting, and can be corrected", () => {
+  assert.equal(normalizeCpfInput("123.456.789-00"), "12345678900");
+  const formatted = preparePixSubmission("buyer@example.invalid", "123.456.789-00");
+  assert.equal(formatted.ready, true);
+  assert.deepEqual(formatted.ready && formatted.data.payer_identification, {
+    type: "CPF",
+    number: "12345678900",
+  });
+
+  const invalid = preparePixSubmission("buyer@example.invalid", "1234567890");
+  const corrected = preparePixSubmission("buyer@example.invalid", "12345678900");
+  assert.equal(invalid.ready, false);
+  assert.equal(corrected.ready, true);
 });
 
 test("Pix pending data renders only values returned by the backend", () => {
@@ -223,6 +252,17 @@ test("an incomplete live 3DS session is recoverable while structural config stay
   assert.equal(
     classifyPaymentError(new PaymentContractError("config inválida"), "preflight"),
     "fatal",
+  );
+});
+
+test("explicit API recoverability takes precedence over an active session", () => {
+  assert.equal(
+    classifyPaymentError(new PaymentApiError("A sessão desapareceu.", false), "active-session"),
+    "fatal",
+  );
+  assert.equal(
+    classifyPaymentError(new PaymentApiError("Falha transitória.", true), "active-session"),
+    "recoverable",
   );
 });
 

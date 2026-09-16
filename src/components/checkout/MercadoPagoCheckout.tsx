@@ -32,13 +32,14 @@ import {
   PaymentPollingAbortedError,
   PaymentPollingTimeoutError,
   buildCardSessionData,
-  buildPixSessionData,
   classifyPaymentSession,
   clearEphemeralCardToken,
   extractPixPresentation,
   findRecoverablePaymentSession,
   methodToProviderId,
+  normalizeCpfInput,
   pollPaymentSession,
+  preparePixSubmission,
   providerIdToMethod,
   type MercadoPagoMethod,
   type MercadoPagoPaymentSession,
@@ -103,6 +104,7 @@ export function MercadoPagoCheckout({
   const [phase, setPhase] = useState<PaymentUiState>("idle");
   const [message, setMessage] = useState("Preparando formas de pagamento...");
   const [cpf, setCpf] = useState("");
+  const [cpfError, setCpfError] = useState<string | null>(null);
   const [pix, setPix] = useState<PixPresentation | null>(null);
   const [copied, setCopied] = useState(false);
   const [challenge, setChallenge] = useState<ThreeDSChallenge | null>(null);
@@ -304,6 +306,7 @@ export function MercadoPagoCheckout({
     setPix(null);
     setCopied(false);
     setChallenge(null);
+    setCpfError(null);
     setPhase("ready");
     setMessage(
       nextMethod === "pix"
@@ -314,6 +317,19 @@ export function MercadoPagoCheckout({
 
   const submitPix = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    let submission: ReturnType<typeof preparePixSubmission>;
+    try {
+      submission = preparePixSubmission(cart.email ?? "", cpf);
+    } catch (error) {
+      showError(error, "preflight");
+      return;
+    }
+    setCpf(submission.normalizedCpf);
+    if (!submission.ready) {
+      setCpfError(submission.error);
+      return;
+    }
+    setCpfError(null);
     if (!submissionLock.current.tryAcquire()) return;
     cancelPolling();
     setPix(null);
@@ -321,11 +337,10 @@ export function MercadoPagoCheckout({
     setPhase("loading");
     setMessage("Criando uma nova sessão Pix no backend...");
     try {
-      const data = buildPixSessionData(cart.email ?? "", cpf);
       const { session } = await api.initiatePaymentSession(
         cart.id,
         MERCADO_PAGO_PIX_PROVIDER_ID,
-        data,
+        submission.data,
       );
       if (mounted.current) await acceptSession(session);
     } catch (error) {
@@ -423,11 +438,15 @@ export function MercadoPagoCheckout({
       {method === "pix" && phase !== "fatal-error" && (
         <PixPanel
           cpf={cpf}
+          cpfError={cpfError}
           disabled={phase === "loading" || phase === "success" || phase === "challenge"}
           phase={phase}
           pix={pix}
           copied={copied}
-          onCpfChange={setCpf}
+          onCpfChange={(value) => {
+            setCpf(normalizeCpfInput(value));
+            setCpfError(null);
+          }}
           onCopy={() => void copyPixCode()}
           onSubmit={(event) => void submitPix(event)}
         />
@@ -544,6 +563,7 @@ function PaymentStatus({ phase, message }: { phase: PaymentUiState; message: str
 
 function PixPanel({
   cpf,
+  cpfError,
   disabled,
   phase,
   pix,
@@ -553,6 +573,7 @@ function PixPanel({
   onSubmit,
 }: {
   cpf: string;
+  cpfError: string | null;
   disabled: boolean;
   phase: PaymentUiState;
   pix: PixPresentation | null;
@@ -561,6 +582,7 @@ function PixPanel({
   onCopy: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const cpfErrorId = useId();
   return (
     <div className="mt-5">
       {!pix && (
@@ -574,10 +596,18 @@ function PixPanel({
               value={cpf}
               onChange={(event) => onCpfChange(event.target.value)}
               placeholder="000.000.000-00"
+              pattern="[0-9]*"
+              aria-invalid={Boolean(cpfError)}
+              aria-describedby={cpfError ? cpfErrorId : undefined}
               disabled={disabled}
               required
             />
           </label>
+          {cpfError && (
+            <p id={cpfErrorId} role="alert" className="mt-2 text-sm text-bunker-danger">
+              {cpfError}
+            </p>
+          )}
           <button
             type="submit"
             disabled={disabled}

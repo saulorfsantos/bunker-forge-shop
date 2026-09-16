@@ -45,6 +45,10 @@ export interface PixSessionData {
   };
 }
 
+export type PixSubmissionPreparation =
+  | { ready: false; normalizedCpf: string; error: string }
+  | { ready: true; normalizedCpf: string; data: PixSessionData };
+
 export interface ThreeDSChallenge {
   externalResourceUrl: string;
   hostname: string;
@@ -194,9 +198,32 @@ export function clearEphemeralCardToken(value: unknown): void {
   }
 }
 
+export function normalizeCpfInput(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+export function preparePixSubmission(
+  emailValue: string,
+  cpfValue: string,
+): PixSubmissionPreparation {
+  const normalizedCpf = normalizeCpfInput(cpfValue);
+  if (normalizedCpf.length !== 11) {
+    return {
+      ready: false,
+      normalizedCpf,
+      error: "Informe um CPF com 11 dígitos para gerar o Pix.",
+    };
+  }
+  return {
+    ready: true,
+    normalizedCpf,
+    data: buildPixSessionData(emailValue, normalizedCpf),
+  };
+}
+
 export function buildPixSessionData(emailValue: string, cpfValue: string): PixSessionData {
   const email = requiredString(emailValue, "O e-mail do pagador");
-  const cpf = cpfValue.replace(/\D/g, "");
+  const cpf = normalizeCpfInput(cpfValue);
   if (cpf.length !== 11) {
     throw new PaymentContractError("Informe um CPF com 11 dígitos para gerar o Pix.");
   }

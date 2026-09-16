@@ -56,6 +56,24 @@ test("all required checkout UI states and double-submit locks are explicit", () 
   assert.match(componentSource, /completionLock\.current\.tryAcquire\(\)/);
 });
 
+test("invalid Pix CPF stays inline and returns before any payment session request", () => {
+  const preparation = componentSource.indexOf("preparePixSubmission(cart.email");
+  const invalidGuard = componentSource.indexOf("if (!submission.ready)", preparation);
+  const invalidReturn = componentSource.indexOf("return;", invalidGuard);
+  const loadingState = componentSource.indexOf('setPhase("loading")', invalidReturn);
+  const sessionRequest = componentSource.indexOf("api.initiatePaymentSession(", invalidReturn);
+
+  assert.ok(preparation >= 0);
+  assert.ok(invalidGuard > preparation);
+  assert.ok(invalidReturn > invalidGuard);
+  assert.ok(loadingState > invalidReturn);
+  assert.ok(sessionRequest > invalidReturn);
+  assert.match(componentSource, /setCpfError\(submission\.error\)/);
+  assert.match(componentSource, /role="alert"[\s\S]*\{cpfError\}/);
+  assert.match(componentSource, /method === "pix" && phase !== "fatal-error"/);
+  assert.match(componentSource, /setCpf\(normalizeCpfInput\(value\)\)/);
+});
+
 test("3DS iframe cannot declare success and backend polling owns final status", () => {
   assert.match(componentSource, /sandbox="allow-forms allow-scripts allow-same-origin"/);
   assert.match(componentSource, /startPolling\(MERCADO_PAGO_CARD_PROVIDER_ID/);

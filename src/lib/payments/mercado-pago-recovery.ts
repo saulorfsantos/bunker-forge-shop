@@ -16,9 +16,11 @@ export function classifyPaymentError(
   context: PaymentErrorContext,
 ): PaymentErrorSeverity {
   if (error instanceof PaymentSessionRecoveryError) return "recoverable";
+  if (error instanceof PaymentApiError) return error.recoverable ? "recoverable" : "fatal";
+  if (error instanceof PaymentContractError) {
+    return context === "active-session" ? "recoverable" : "fatal";
+  }
   if (context === "active-session") return "recoverable";
-  if (error instanceof PaymentContractError) return "fatal";
-  if (error instanceof PaymentApiError && !error.recoverable) return "fatal";
   return "recoverable";
 }
 

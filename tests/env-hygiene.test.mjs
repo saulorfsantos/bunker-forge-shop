@@ -7,11 +7,19 @@ const repositoryRoot = new URL("..", import.meta.url);
 const readSource = (path) => readFileSync(new URL(path, repositoryRoot), "utf8");
 
 test("local Vite environment files are explicitly ignored", () => {
-  const ignored = execFileSync("git", ["check-ignore", ".env.local", ".env.test.local"], {
+  const ignored = execFileSync("git", ["check-ignore", ".env", ".env.local", ".env.test.local"], {
     cwd: repositoryRoot,
     encoding: "utf8",
   });
-  assert.deepEqual(ignored.trim().split("\n"), [".env.local", ".env.test.local"]);
+  assert.deepEqual(ignored.trim().split("\n"), [".env", ".env.local", ".env.test.local"]);
+});
+
+test("the placeholder template is tracked while .env is not tracked", () => {
+  const tracked = execFileSync("git", ["ls-files", ".env", ".env.example"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert.deepEqual(tracked.trim().split("\n"), [".env.example"]);
 });
 
 test("the environment template contains placeholders only and no backend secret names", () => {
@@ -23,7 +31,8 @@ test("the environment template contains placeholders only and no backend secret 
 test("checkout docs direct local public config to ignored .env.local", () => {
   const readme = readSource("README.md");
   assert.match(readme, /Copie `.env\.example` para `.env\.local`/);
-  assert.match(readme, /não a coloque no\s+arquivo `.env` rastreado/);
+  assert.match(readme, /use exclusivamente\s+`.env\.local`/);
+  assert.match(readme, /nunca use `.env` como destino de configuração/);
   assert.match(readme, /injetada no bundle em build\/dev time/);
   assert.match(readme, /Access token[\s\S]*\*\*nunca\*\*[\s\S]*storefront/);
 });
