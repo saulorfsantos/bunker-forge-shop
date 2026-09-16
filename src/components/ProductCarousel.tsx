@@ -83,10 +83,7 @@ export function ProductCarousel({
         </div>
       ))
     : products.map((p) => (
-        <div
-          key={p.id}
-          className="snap-start shrink-0 w-[80%] sm:w-[48%] md:w-[32%] lg:w-[24%]"
-        >
+        <div key={p.id} className="snap-start shrink-0 w-[80%] sm:w-[48%] md:w-[32%] lg:w-[24%]">
           <ProductCard product={p} />
         </div>
       ));
