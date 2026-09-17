@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Card 153 — auditoria visual do catálogo</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #10110f; color: #f1eee7; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 28px; }
+      header { max-width: 1500px; margin: 0 auto 24px; }
+      h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 42px); text-transform: uppercase; }
+      p { color: #b7b2a7; line-height: 1.5; }
+      .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+      .legend span, .source { border: 1px solid #46483f; padding: 4px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+      main { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; max-width: 1500px; margin: auto; }
+      article { overflow: hidden; border: 1px solid #393b35; background: #1b1d19; }
+      article[data-kind="placeholder"], article[data-kind="localhost"], article.broken { border-color: #bd5149; }
+      article[data-kind="picsum"] { border-color: #b79247; }
+      .image { aspect-ratio: 1; background: #090a09; display: grid; place-items: center; overflow: hidden; }
+      img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+      .meta { padding: 12px; }
+      h2 { margin: 0; min-height: 42px; font-size: 15px; line-height: 1.35; }
+      code { display: block; margin: 9px 0; color: #b7b2a7; font-size: 10px; overflow-wrap: anywhere; }
+      .source { display: inline-block; color: #d5b870; }
+      a { color: #d5b870; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Auditoria visual do catálogo — Card 153</h1>
+      <p>
+        Snapshot read-only de 2026-09-17. Associação do backend não prova correção semântica.
+        Revise principalmente os 45 itens picsum, o item localhost e os 14 placeholders.
+      </p>
+      <div class="legend">
+        <span>11 R2</span><span>45 picsum</span><span>1 localhost</span><span>14 placeholder</span>
+      </div>
+    </header>
+    <main id="catalog"></main>
+    <script>
+      const placeholder = "../src/assets/logo-shield.png";
+      const products = [
+        ["BB's Tango Down 0.20g 2.800un","bbs-tango-down-0-20g-2-800un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/Tango%20Down-01KWTFMWPHR78108G8CMZE5H8Q.png"],
+        ["BB's Tango Down 0.30g 2.800un","bbs-tango-down-0-30g-2-800un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/1224-x1ycb2lps0-01KWTFWFX4MT05Z1922AE01N4A.webp"],
+        ["BB's Tango Down 0.28g 5000un","bbs-tango-down-0-28g-5000un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/Tango%20Down%20028-01KWTFZ69YG8WG8X527WA1H206.webp"],
+        ["BB's Tango Down 0.25g 2.800un","bbs-tango-down-0-25g-2-800un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/BB's%20Tango%20Down%20025g%202800un%20%20-01KWTG20JYTKPHN5XFZ8XBE1XM.webp"],
+        ["BB's Tracer Tango Down 0.25g 2.800un","bbs-tracer-tango-down-0-25g-2-800un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/BB's%20Tracer%20Tango%20Down%20025g%202800un%20%20-01KWTG6B3FYQC2WXCCEE2JQVBK.webp"],
+        ["BB's Sniper Tango Down 0.36g 1.000un","bbs-sniper-tango-down-0-36g-1-000un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/BB's%20Sniper%20Tango%20Down%20036g%201000un%20%20-01KWTGAFSS20AZRAZ3VJ7MG377.webp"],
+        ["BB's Tango Down 0.30g 5000un","bbs-tango-down-0-30g-5000un","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/BB's%20Tango%20Down%20030g%205000un%20%20-01KWTGCXA1KBXY3GEVYQ3FMCZF.webp"],
+        ["BB's Tango Down 0.28g 2.800un","bbs-tango-down-0-28g-2-800un","https://picsum.photos/seed/bbs-tango-down-0-28g-2-800un/600/600"],
+        ["BB's Sniper Tango Down 0.32g 2.000un","bbs-sniper-tango-down-0-32g-2-000un","https://picsum.photos/seed/bbs-sniper-tango-down-0-32g-2-000un/600/600"],
+        ["BB's Tango Down 0.20g 5000un","bbs-tango-down-0-20g-5000un","https://picsum.photos/seed/bbs-tango-down-0-20g-5000un/600/600"],
+        ["BB's Tango Down 0.25g 5000un","bbs-tango-down-0-25g-5000un","https://picsum.photos/seed/bbs-tango-down-0-25g-5000un/600/600"],
+        ["BB's Sniper Tango Down 0.36g 500un","bbs-sniper-tango-down-0-36g-500un","https://picsum.photos/seed/bbs-sniper-tango-down-0-36g-500un/600/600"],
+        ["BB's Tracer Tango Down 0.25g 5000un","bbs-tracer-tango-down-0-25g-5000un","https://picsum.photos/seed/bbs-tracer-tango-down-0-25g-5000un/600/600"],
+        ["Magazine M4 Mid-Cap HP Polímero 130 BB's Rossi","magazine-m4-mid-cap-hp-polimero-130-bbs-rossi","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/Magazine%20M4%20Mid-Cap%20HP%20Pol%C3%83%C2%ADmero%20130%20BB's%20Rossi%2001-01KWTGK9PFN561X4G61M9T7ZRW.webp"],
+        ["BB's Sniper Tango Down 0.40g 500un","bbs-sniper-tango-down-0-40g-500un","https://picsum.photos/seed/bbs-sniper-tango-down-0-40g-500un/600/600"],
+        ["Colete Tático Modular SP-033 Woodland Rossi","colete-tatico-modular-sp-033-woodland-rossi","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/Colete%20T%C3%83%C2%A1tico%20Modular%20SP-033%20Woodland%20Rossi-01KWTGP00FH59ARKMCF4DXK2CH.webp"],
+        ["BB's Sniper Tango Down 0.45g 1.000un","bbs-sniper-tango-down-0-45g-1-000un","https://picsum.photos/seed/bbs-sniper-tango-down-0-45g-1-000un/600/600"],
+        ["BB's Sniper Tango Down 0.48g 1.000un","bbs-sniper-tango-down-0-48g-1-000un","https://picsum.photos/seed/bbs-sniper-tango-down-0-48g-1-000un/600/600"],
+        ["BB's Sniper Tango Down 0.40g 1.000un","bbs-sniper-tango-down-0-40g-1-000un","https://picsum.photos/seed/bbs-sniper-tango-down-0-40g-1-000un/600/600"],
+        ["BB's Sniper Tango Down 0.50g 500un","bbs-sniper-tango-down-0-50g-500un","https://picsum.photos/seed/bbs-sniper-tango-down-0-50g-500un/600/600"],
+        ["BB's Sniper Tango Down 0.48g 500un","bbs-sniper-tango-down-0-48g-500un","https://picsum.photos/seed/bbs-sniper-tango-down-0-48g-500un/600/600"],
+        ["BB's Sniper Tango Down 0.45g 500un","bbs-sniper-tango-down-0-45g-500un","https://picsum.photos/seed/bbs-sniper-tango-down-0-45g-500un/600/600"],
+        ["Magazine M4 Mid-Cap Polímero 100 BB's Rossi","magazine-m4-mid-cap-polimero-100-bbs-rossi","https://picsum.photos/seed/magazine-m4-mid-cap-polimero-100-bbs-rossi/600/600"],
+        ["Colete Tático Modular SP-033 Verde Militar Rossi","colete-tatico-modular-sp-033-verde-militar-rossi","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/Colete%20T%C3%83%C2%A1tico%20Modular%20SP-033%20Verde%20Militar%20Rossi-01KWTGZKG2XN752SAEMBKK4JHD.jpg"],
+        ["Magazine AK Mid-Cap Polímero 130 BB's Rossi","magazine-ak-mid-cap-polimero-130-bbs-rossi","https://pub-0e131148970b43ad9ce71e328c809de2.r2.dev/MAG-ROSSI-AK47-3-01KWTGSG2D9CPVWX6E6SAZXAZA.jpg"],
+        ["Magazine Green Gás Pistola 1911 Redwings Rossi","magazine-green-gas-pistola-1911-redwings-rossi","https://picsum.photos/seed/magazine-green-gas-pistola-1911-redwings-rossi/600/600"],
+        ["Magazine Green Gás Pistola Glock R17/R18 Rossi","magazine-green-gas-pistola-glock-r17-r18-rossi","https://picsum.photos/seed/magazine-green-gas-pistola-glock-r17-r18-rossi/600/600"],
+        ["Suporte Bandoleira Engate Rápido Metal","suporte-bandoleira-engate-rapido-metal","https://picsum.photos/seed/suporte-bandoleira-engate-rapido-metal/600/600"],
+        ["Luneta Rossi 4.5x20 WA Mount 3/8 11mm","luneta-rossi-4-5x20-wa-mount-3-8-11mm","https://picsum.photos/seed/luneta-rossi-4-5x20-wa-mount-3-8-11mm/600/600"],
+        ["Elevador de Mount para Trilho 22mm","elevador-de-mount-para-trilho-22mm","https://picsum.photos/seed/elevador-de-mount-para-trilho-22mm/600/600"],
+        ["Bipé Rossi 6-9 Fixo Estilo Harris","bipe-rossi-6-9-fixo-estilo-harris","https://picsum.photos/seed/bipe-rossi-6-9-fixo-estilo-harris/600/600"],
+        ["Luneta Rossi Gold Crown 4x32 PCP","luneta-rossi-gold-crown-4x32-pcp","https://picsum.photos/seed/luneta-rossi-gold-crown-4x32-pcp/600/600"],
+        ["Magazine M4 Mid-Cap Full Metal 110 BB's Rossi","magazine-m4-mid-cap-full-metal-110-bbs-rossi","https://picsum.photos/seed/magazine-m4-mid-cap-full-metal-110-bbs-rossi/600/600"],
+        ["Mira Red Dot Mini 1x18 Rossi","mira-red-dot-mini-1x18-rossi","https://picsum.photos/seed/mira-red-dot-mini-1x18-rossi/600/600"],
+        ["Canivete Jiboia Karambit F386 Rossi","canivete-jiboia-karambit-f386-rossi","http://localhost:9000/static/1782591286651-81962e51-13fc-492e-acb8-a387e572686c001.webp"],
+        ["Coldre Tan Porta Magazine Pistola Rossi","coldre-tan-porta-magazine-pistola-rossi","https://picsum.photos/seed/coldre-tan-porta-magazine-pistola-rossi/600/600"],
+        ["Magazine M4 Hi-Cap HP Polímero 350 BB's Rossi","magazine-m4-hi-cap-hp-polimero-350-bbs-rossi","https://picsum.photos/seed/magazine-m4-hi-cap-hp-polimero-350-bbs-rossi/600/600"],
+        ["Magazine M4 Hi-Cap Full Metal 300 BB's Rossi","magazine-m4-hi-cap-full-metal-300-bbs-rossi","https://picsum.photos/seed/magazine-m4-hi-cap-full-metal-300-bbs-rossi/600/600"],
+        ["Mira Holográfica Dot 551 Red/Green Rossi","mira-holografica-dot-551-red-green-rossi","https://picsum.photos/seed/mira-holografica-dot-551-red-green-rossi/600/600"],
+        ["Coldre Tan Porta Magazine M4/AK Rossi","coldre-tan-porta-magazine-m4-ak-rossi","https://picsum.photos/seed/coldre-tan-porta-magazine-m4-ak-rossi/600/600"],
+        ["Luneta Discovery HT-NV 3x24IR Retículo Iluminado","luneta-discovery-ht-nv-3x24ir-reticulo-iluminado","https://picsum.photos/seed/luneta-discovery-ht-nv-3x24ir-reticulo-iluminado/600/600"],
+        ["Combo Specna Arms 5 Mid-Cap 125 BB's","combo-specna-arms-5-mid-cap-125-bbs","https://picsum.photos/seed/combo-specna-arms-5-mid-cap-125-bbs/600/600"],
+        ["Cilindro CO2 12g Leão","cilindro-co2-12g-leao","https://picsum.photos/seed/cilindro-co2-12g-leao/600/600"],
+        ["Lipo Bag Lipo-Safe Leão","lipo-bag-lipo-safe-leao","https://picsum.photos/seed/lipo-bag-lipo-safe-leao/600/600"],
+        ["Green Gás 12kg com Silicone Leão","green-gas-12kg-com-silicone-leao","https://picsum.photos/seed/green-gas-12kg-com-silicone-leao/600/600"],
+        ["Maleta Pistola Desert Premium Tan","maleta-pistola-desert-premium-tan","https://picsum.photos/seed/maleta-pistola-desert-premium-tan/600/600"],
+        ["Bateria LiPo Ultra Leão 7.4V/2S 250mAh 20C AEP","bateria-lipo-ultra-leao-7-4v-2s-250mah-20c-aep","https://picsum.photos/seed/bateria-lipo-ultra-leao-7-4v-2s-250mah-20c-aep/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 900mAh 20C/40C XT60","bateria-lipo-ultra-leao-11-1v-3s-900mah-20c-40c-xt60","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-900mah-20c-40c-xt60/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 1100mAh 20C/40C XT60","bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-xt60","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-xt60/600/600"],
+        ["Canivete Jararaca F067 LRW Rossi","canivete-jararaca-f067-lrw-rossi","https://picsum.photos/seed/canivete-jararaca-f067-lrw-rossi/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 1100mAh 20C/40C Deans","bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-deans","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-deans/600/600"],
+        ["Óculos Tático Warmmo 3 Lentes","oculos-tatico-warmmo-3-lentes","https://picsum.photos/seed/oculos-tatico-warmmo-3-lentes/600/600"],
+        ["Canivete Sucuri F121-2 Rossi","canivete-sucuri-f121-2-rossi","https://picsum.photos/seed/canivete-sucuri-f121-2-rossi/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 1100mAh 20C/40C Tamiya","bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-tamiya","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-1100mah-20c-40c-tamiya/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S AK Series 1400mAh 25C/50C Mini Tamiya","bateria-lipo-ultra-leao-11-1v-3s-ak-series-1400mah-25c-50c-mini-tamiya","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-ak-series-1400mah-25c-50c-mini-tamiya/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 3-Pack 1100mAh 20C/40C Deans","bateria-lipo-ultra-leao-11-1v-3s-3-pack-1100mah-20c-40c-deans","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-3-pack-1100mah-20c-40c-deans/600/600"],
+        ["Bateria LiPo Ultra Leão 11.1V/3S 3-Pack 1100mAh 20C/40C Tamiya","bateria-lipo-ultra-leao-11-1v-3s-3-pack-1100mah-20c-40c-tamiya","https://picsum.photos/seed/bateria-lipo-ultra-leao-11-1v-3s-3-pack-1100mah-20c-40c-tamiya/600/600"],
+        ["Luneta Rossi 1.2-6x24 LPVO","luneta-rossi-1-2-6x24-lpvo",null],
+        ["Luneta Rossi Gold Crown 3-9x40EG","luneta-rossi-gold-crown-3-9x40eg",null],
+        ["Red Dot Rossi 553 Black","red-dot-rossi-553-black",null],
+        ["Red Dot Rossi 553 TAN","red-dot-rossi-553-tan",null],
+        ["Red Dot Rossi 558","red-dot-rossi-558",null],
+        ["Red Dot Rossi ROMEO TAN","red-dot-rossi-romeo-tan",null],
+        ["Red Dot Rossi M1","red-dot-rossi-m1",null],
+        ["Red Dot Rossi ROMEO BK","red-dot-rossi-romeo-bk",null],
+        ["Red Dot Rossi 1x32C ACOG","red-dot-rossi-1x32c-acog",null],
+        ["Luneta Rossi 3-9x26EGC RIS","luneta-rossi-3-9x26egc-ris",null],
+        ["Red Dot Rossi M3","red-dot-rossi-m3",null],
+        ["Luneta Rossi 4-16x42AO","luneta-rossi-4-16x42ao",null],
+        ["Luneta Rossi Magnifier 3x","luneta-rossi-magnifier-3x",null],
+        ["Luneta Rossi 6-24x42AO","luneta-rossi-6-24x42ao",null]
+      ];
+
+      const root = document.querySelector("#catalog");
+      for (const [title, handle, image] of products) {
+        const kind = !image ? "placeholder" : image.includes("picsum") ? "picsum" : image.includes("localhost") ? "localhost" : "r2";
+        const article = document.createElement("article");
+        article.dataset.kind = kind;
+        const frame = document.createElement("div"); frame.className = "image";
+        const img = document.createElement("img"); img.src = image || placeholder; img.alt = title; img.loading = "lazy";
+        img.addEventListener("error", () => { article.classList.add("broken"); img.src = placeholder; }, { once: true });
+        frame.append(img);
+        const meta = document.createElement("div"); meta.className = "meta";
+        const heading = document.createElement("h2"); heading.textContent = title;
+        const code = document.createElement("code"); code.textContent = handle;
+        const badge = document.createElement("span"); badge.className = "source"; badge.textContent = kind;
+        meta.append(heading, code, badge); article.append(frame, meta); root.append(article);
+      }
+    </script>
+  </body>
+</html>

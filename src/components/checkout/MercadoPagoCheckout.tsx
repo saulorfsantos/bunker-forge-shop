@@ -41,6 +41,7 @@ import {
   pollPaymentSession,
   preparePixSubmission,
   providerIdToMethod,
+  resolveMercadoPagoCapabilities,
   type MercadoPagoMethod,
   type MercadoPagoPaymentSession,
   type MercadoPagoProviderId,
@@ -92,6 +93,10 @@ export function MercadoPagoCheckout({
   onBack,
   onOrder,
 }: MercadoPagoCheckoutProps) {
+  const capabilities = useMemo(
+    () => resolveMercadoPagoCapabilities(availableProviderIds),
+    [availableProviderIds],
+  );
   const api = useMemo(
     () =>
       createMercadoPagoStoreApi({
@@ -100,7 +105,9 @@ export function MercadoPagoCheckout({
       }),
     [],
   );
-  const [method, setMethod] = useState<MercadoPagoMethod>("pix");
+  const [method, setMethod] = useState<MercadoPagoMethod>(() =>
+    capabilities.card && !capabilities.pix ? "card" : "pix",
+  );
   const [phase, setPhase] = useState<PaymentUiState>("idle");
   const [message, setMessage] = useState("Preparando formas de pagamento...");
   const [cpf, setCpf] = useState("");
@@ -244,13 +251,9 @@ export function MercadoPagoCheckout({
 
   useEffect(() => {
     mounted.current = true;
-    const hasPix = availableProviderIds.includes(MERCADO_PAGO_PIX_PROVIDER_ID);
-    const hasCard = availableProviderIds.includes(MERCADO_PAGO_CARD_PROVIDER_ID);
-    if (!hasPix || !hasCard) {
+    if (capabilities.methods.length === 0) {
       setPhase("fatal-error");
-      setMessage(
-        "Pix e cartão precisam estar habilitados na região BRL antes de abrir o checkout.",
-      );
+      setMessage("Nenhuma forma de pagamento compatível está disponível no momento.");
       return () => {
         mounted.current = false;
         cancelPolling();
@@ -262,14 +265,30 @@ export function MercadoPagoCheckout({
       if (recovered) {
         const recoveredMethod = providerIdToMethod(recovered.provider_id);
         if (!recoveredMethod) throw new PaymentContractError("O método recuperado é inválido.");
-        setMethod(recoveredMethod);
-        setPhase("loading");
-        setMessage("Recuperando a tentativa de pagamento do backend...");
-        void acceptSession(recovered).catch(showError);
-      } else {
-        setPhase("ready");
-        setMessage("Escolha Pix ou cartão para continuar.");
+        if (capabilities[recoveredMethod]) {
+          setMethod(recoveredMethod);
+          setShouldMountCard(false);
+          setPhase("loading");
+          setMessage("Recuperando a tentativa de pagamento do backend...");
+          void acceptSession(recovered).catch(showError);
+          return () => {
+            mounted.current = false;
+            cancelPolling();
+          };
+        }
       }
+
+      const initialMethod: MercadoPagoMethod = capabilities.pix ? "pix" : "card";
+      setMethod(initialMethod);
+      setShouldMountCard(initialMethod === "card");
+      setPhase("ready");
+      setMessage(
+        capabilities.pix && capabilities.card
+          ? "Escolha Pix ou cartão para continuar."
+          : initialMethod === "pix"
+            ? "Pix está disponível para este checkout."
+            : "Cartão está disponível para este checkout.",
+      );
     } catch (error) {
       showError(error);
     }
@@ -278,10 +297,11 @@ export function MercadoPagoCheckout({
       mounted.current = false;
       cancelPolling();
     };
-  }, [acceptSession, availableProviderIds, cancelPolling, cart.payment_collection, showError]);
+  }, [acceptSession, cancelPolling, capabilities, cart.payment_collection, showError]);
 
   const selectMethod = (nextMethod: MercadoPagoMethod) => {
     if (phase === "loading" || phase === "success") return;
+    if (!capabilities[nextMethod]) return;
     if (nextMethod === method) return;
     if (
       !confirmPaymentMethodSwitch(
@@ -413,24 +433,28 @@ export function MercadoPagoCheckout({
       </div>
 
       <div
-        className="mt-5 grid grid-cols-2 gap-3"
+        className={`mt-5 grid gap-3 ${capabilities.methods.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
         role="radiogroup"
         aria-label="Forma de pagamento"
       >
-        <PaymentMethodButton
-          active={method === "pix"}
-          disabled={phase === "loading" || phase === "success"}
-          icon={<QrCode className="h-5 w-5" />}
-          label="Pix"
-          onClick={() => selectMethod("pix")}
-        />
-        <PaymentMethodButton
-          active={method === "card"}
-          disabled={phase === "loading" || phase === "success"}
-          icon={<CreditCard className="h-5 w-5" />}
-          label="Cartão"
-          onClick={() => selectMethod("card")}
-        />
+        {capabilities.pix && (
+          <PaymentMethodButton
+            active={method === "pix"}
+            disabled={phase === "loading" || phase === "success"}
+            icon={<QrCode className="h-5 w-5" />}
+            label="Pix"
+            onClick={() => selectMethod("pix")}
+          />
+        )}
+        {capabilities.card && (
+          <PaymentMethodButton
+            active={method === "card"}
+            disabled={phase === "loading" || phase === "success"}
+            icon={<CreditCard className="h-5 w-5" />}
+            label="Cartão"
+            onClick={() => selectMethod("card")}
+          />
+        )}
       </div>
 
       <PaymentStatus phase={phase} message={message} />
@@ -708,7 +732,9 @@ function CardPaymentBrick({
     const publicKey = getMercadoPagoPublicKey();
     if (!publicKey) {
       callbacks.current.onFatal(
-        new PaymentContractError("A chave pública do Mercado Pago não está configurada."),
+        new PaymentContractError(
+          "O cartão está indisponível porque VITE_MERCADO_PAGO_PUBLIC_KEY não foi configurada no ambiente de build.",
+        ),
       );
       return;
     }

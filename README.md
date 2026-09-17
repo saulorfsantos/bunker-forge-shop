@@ -120,9 +120,14 @@ VITE_MERCADO_PAGO_PUBLIC_KEY=
 
 Copie `.env.example` para `.env.local`, que é carregado automaticamente pelo Vite em dev/build e é
 explicitamente ignorado pelo Git, e preencha apenas os valores públicos do ambiente local. A public
-key TEST `VITE_MERCADO_PAGO_PUBLIC_KEY` é injetada no bundle em build/dev time: use exclusivamente
-`.env.local` para configuração local e nunca use `.env` como destino de configuração. A ausência dessa
-public key bloqueia o formulário de cartão de forma segura.
+key `VITE_MERCADO_PAGO_PUBLIC_KEY` é aceita somente pelo ambiente.
+Ela é injetada no bundle em build/dev time pelo Vite.
+Para desenvolvimento, use exclusivamente `.env.local`.
+Para manter a configuração local isolada, nunca use `.env` como destino de configuração.
+Em produção, o operador deve definir a variável no
+ambiente de build, sem versionar o valor no repositório. A ausência da public key bloqueia somente o
+formulário de cartão de forma segura; Pix continua disponível quando o provider Pix estiver
+habilitado no backend.
 Access token e webhook secret do Mercado Pago pertencem exclusivamente ao backend e **nunca** devem
 ser configurados ou expostos no storefront.
 

@@ -61,6 +61,40 @@ test("selection never falls back to the first variant when more than one exists"
   assert.equal(resolveSelectedVariant([{ id: "variant_only" }], null)?.id, "variant_only");
 });
 
+test("an explicit selection changes the variant id, SKU, and price used for cart input", () => {
+  const variants = [
+    mapMedusaVariant({
+      id: "variant_black",
+      sku: "SKU-BLACK",
+      title: "Preto",
+      manage_inventory: true,
+      inventory_quantity: 2,
+      calculated_price: { calculated_amount: 250 },
+    }),
+    mapMedusaVariant({
+      id: "variant_tan",
+      sku: "SKU-TAN",
+      title: "Tan",
+      manage_inventory: true,
+      inventory_quantity: 4,
+      calculated_price: { calculated_amount: 275 },
+    }),
+  ];
+
+  assert.equal(resolveSelectedVariant(variants, null), undefined);
+  const black = resolveSelectedVariant(variants, "variant_black");
+  const tan = resolveSelectedVariant(variants, "variant_tan");
+  assert.deepEqual(
+    black && { cartVariantId: black.id, sku: black.sku, price: black.currentPrice },
+    { cartVariantId: "variant_black", sku: "SKU-BLACK", price: 250 },
+  );
+  assert.deepEqual(tan && { cartVariantId: tan.id, sku: tan.sku, price: tan.currentPrice }, {
+    cartVariantId: "variant_tan",
+    sku: "SKU-TAN",
+    price: 275,
+  });
+});
+
 test("managed inventory at zero is unavailable unless backorders are explicitly enabled", () => {
   const unavailable = mapMedusaVariant({
     id: "variant_zero",

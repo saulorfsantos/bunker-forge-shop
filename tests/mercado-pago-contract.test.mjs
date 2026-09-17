@@ -18,6 +18,7 @@ import {
   pollPaymentSession,
   preparePixSubmission,
   providerIdToMethod,
+  resolveMercadoPagoCapabilities,
   validateThreeDSChallenge,
 } from "../src/lib/payments/mercado-pago-contract.ts";
 import { PaymentApiError } from "../src/lib/payments/mercado-pago-api.ts";
@@ -48,6 +49,50 @@ test("payment selection maps Pix, card, then Pix to the real provider ids", () =
   ]);
   assert.equal(providerIdToMethod(MERCADO_PAGO_CARD_PROVIDER_ID), "card");
   assert.equal(providerIdToMethod("pp_unrelated"), null);
+});
+
+test("payment capabilities expose only exact supported Mercado Pago providers", () => {
+  const matrix = [
+    {
+      name: "Pix + card",
+      providers: [MERCADO_PAGO_PIX_PROVIDER_ID, MERCADO_PAGO_CARD_PROVIDER_ID],
+      expected: { pix: true, card: true, methods: ["pix", "card"] },
+    },
+    {
+      name: "only Pix",
+      providers: [MERCADO_PAGO_PIX_PROVIDER_ID],
+      expected: { pix: true, card: false, methods: ["pix"] },
+    },
+    {
+      name: "only card",
+      providers: [MERCADO_PAGO_CARD_PROVIDER_ID],
+      expected: { pix: false, card: true, methods: ["card"] },
+    },
+    {
+      name: "system default only",
+      providers: ["pp_system_default"],
+      expected: { pix: false, card: false, methods: [] },
+    },
+    {
+      name: "unknown only",
+      providers: ["pp_unknown_provider"],
+      expected: { pix: false, card: false, methods: [] },
+    },
+    {
+      name: "unknown + Pix",
+      providers: ["pp_unknown_provider", MERCADO_PAGO_PIX_PROVIDER_ID],
+      expected: { pix: true, card: false, methods: ["pix"] },
+    },
+    {
+      name: "unknown + card",
+      providers: ["pp_unknown_provider", MERCADO_PAGO_CARD_PROVIDER_ID],
+      expected: { pix: false, card: true, methods: ["card"] },
+    },
+  ];
+
+  for (const entry of matrix) {
+    assert.deepEqual(resolveMercadoPagoCapabilities(entry.providers), entry.expected, entry.name);
+  }
 });
 
 test("card payload is allowlisted, requires its token, and clears it after use", () => {

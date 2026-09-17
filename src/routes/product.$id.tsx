@@ -18,6 +18,7 @@ import { resolveSelectedVariant } from "@/lib/catalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SafeProductImage } from "@/components/SafeProductImage";
 
 const CATEGORY_HANDLE_TO_ID: Record<string, string> = {
   airsoft: MEDUSA_CATEGORY_IDS.AIRSOFT,
@@ -191,15 +192,20 @@ function ProductPage() {
                   )}
                   aria-label={`Imagem ${i + 1}`}
                 >
-                  <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  <SafeProductImage
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-contain p-1"
+                  />
                 </button>
               ))}
             </div>
             <div className="relative flex-1 aspect-square bg-bunker-charcoal border border-bunker-graphite rounded-sm overflow-hidden">
-              <img
+              <SafeProductImage
                 src={product.images[mainImage]}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-4 md:p-6"
               />
               <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                 {discountPercent >= 10 && (

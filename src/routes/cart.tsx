@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
 import { formatBRL } from "@/lib/money";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SafeProductImage } from "@/components/SafeProductImage";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -84,7 +85,11 @@ function CartPage() {
                     params={{ id: p.id }}
                     className="shrink-0 w-24 h-24 bg-bunker-black border border-bunker-graphite rounded-sm overflow-hidden"
                   >
-                    <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                    <SafeProductImage
+                      src={p.images[0]}
+                      alt={p.name}
+                      className="w-full h-full object-contain p-2"
+                    />
                   </Link>
                   <div className="flex-1 flex flex-col">
                     <Link

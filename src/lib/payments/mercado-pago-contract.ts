@@ -9,6 +9,12 @@ export const MERCADO_PAGO_PROVIDER_IDS = [
 export type MercadoPagoProviderId = (typeof MERCADO_PAGO_PROVIDER_IDS)[number];
 export type MercadoPagoMethod = "pix" | "card";
 
+export interface MercadoPagoCapabilities {
+  pix: boolean;
+  card: boolean;
+  methods: MercadoPagoMethod[];
+}
+
 export interface MercadoPagoPaymentSession {
   id?: string;
   provider_id: string;
@@ -153,6 +159,17 @@ export function providerIdToMethod(providerId: string): MercadoPagoMethod | null
 
 export function isMercadoPagoProviderId(providerId: string): providerId is MercadoPagoProviderId {
   return providerIdToMethod(providerId) !== null;
+}
+
+export function resolveMercadoPagoCapabilities(
+  providerIds: readonly string[],
+): MercadoPagoCapabilities {
+  const pix = providerIds.includes(MERCADO_PAGO_PIX_PROVIDER_ID);
+  const card = providerIds.includes(MERCADO_PAGO_CARD_PROVIDER_ID);
+  const methods: MercadoPagoMethod[] = [];
+  if (pix) methods.push("pix");
+  if (card) methods.push("card");
+  return { pix, card, methods };
 }
 
 export function buildCardSessionData(

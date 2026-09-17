@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
+import { SafeProductImage } from "./SafeProductImage";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const AUTOCOMPLETE_LIMIT = 6;
@@ -299,11 +300,11 @@ function SearchFormWithSuggestions({
                     onClick={onCloseDropdown}
                     className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
                   >
-                    <img
+                    <SafeProductImage
                       src={product.images[0]}
                       alt=""
                       draggable={false}
-                      className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite pointer-events-none"
+                      className="w-10 h-10 shrink-0 rounded-sm object-contain p-1 bg-bunker-black border border-bunker-graphite pointer-events-none"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-bunker-text-primary line-clamp-1">
