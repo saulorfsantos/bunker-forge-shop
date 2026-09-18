@@ -13,8 +13,10 @@ import { Layout } from "@/components/Layout";
 import { MercadoPagoCheckout } from "@/components/checkout/MercadoPagoCheckout";
 import { useCart } from "@/contexts/CartContext";
 import { formatBRL } from "@/lib/money";
+import { loadCalculatedShippingPrices, shippingOptionPriceLabel } from "@/lib/shipping-quotes";
 import { areCheckoutLineItemPricesAvailable } from "@/lib/checkout-attempt";
 import {
+  calculateShippingOptionPrice,
   getActiveCartId,
   listPaymentProviders,
   listShippingOptions,
@@ -62,6 +64,7 @@ function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState<CheckoutAddress>(emptyAddress);
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [shippingPrices, setShippingPrices] = useState<Record<string, number | null>>({});
   const [shippingOptionId, setShippingOptionId] = useState("");
   const [paymentProviders, setPaymentProviders] = useState<PaymentProvider[]>([]);
   const [isBooting, setIsBooting] = useState(true);
@@ -92,6 +95,25 @@ function CheckoutPage() {
       .finally(() => setIsBooting(false));
   }, []);
 
+  useEffect(() => {
+    if (!cart?.id) return;
+    let cancelled = false;
+    const cartId = cart.id;
+
+    void loadCalculatedShippingPrices(
+      cartId,
+      shippingOptions,
+      calculateShippingOptionPrice,
+      (optionId, amount) => {
+        if (!cancelled) setShippingPrices((current) => ({ ...current, [optionId]: amount }));
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart?.id, shippingOptions]);
+
   const updateAddress = (field: keyof CheckoutAddress, value: string) => {
     setAddress((current) => ({ ...current, [field]: value }));
   };
@@ -120,6 +142,7 @@ function CheckoutPage() {
       });
       const options = await listShippingOptions(cart.id);
       setCart(updatedCart);
+      setShippingPrices({});
       setShippingOptions(options);
       setShippingOptionId(options[0]?.id ?? "");
       if (!options.length) {
@@ -283,6 +306,7 @@ function CheckoutPage() {
           {step === "shipping" && (
             <ShippingForm
               options={shippingOptions}
+              quotedPrices={shippingPrices}
               selectedId={shippingOptionId}
               isSubmitting={isSubmitting}
               onBack={() => {
@@ -475,6 +499,7 @@ function AddressForm({
 
 interface ShippingFormProps {
   options: ShippingOption[];
+  quotedPrices: Record<string, number | null>;
   selectedId: string;
   isSubmitting: boolean;
   onBack: () => void;
@@ -484,6 +509,7 @@ interface ShippingFormProps {
 
 function ShippingForm({
   options,
+  quotedPrices,
   selectedId,
   isSubmitting,
   onBack,
@@ -524,9 +550,7 @@ function ShippingForm({
             />
             <span className="flex-1 text-sm font-semibold">{option.name}</span>
             <span className="price-tag text-sm">
-              {typeof option.amount === "number"
-                ? formatBRL(option.amount)
-                : "Calculado ao aplicar"}
+              {shippingOptionPriceLabel(option, quotedPrices[option.id])}
             </span>
           </label>
         ))}
@@ -616,7 +640,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-bunker-text-secondary">Recebimento</dt>
+          <dt className="text-bunker-text-secondary">Frete</dt>
           <dd>
             {typeof cart.shipping_total === "number"
               ? formatBRL(cart.shipping_total)

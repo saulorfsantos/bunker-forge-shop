@@ -93,6 +93,20 @@ export async function listShippingOptions(cartId: string): Promise<ShippingOptio
   return shipping_options as ShippingOption[];
 }
 
+export async function calculateShippingOptionPrice(
+  cartId: string,
+  optionId: string,
+): Promise<number> {
+  const { shipping_option } = await sdk.store.fulfillment.calculate(optionId, {
+    cart_id: cartId,
+    data: {},
+  });
+  if (typeof shipping_option.amount !== "number" || !Number.isFinite(shipping_option.amount)) {
+    throw new Error("Shipping quote unavailable");
+  }
+  return shipping_option.amount;
+}
+
 export async function selectShippingOption(
   cartId: string,
   optionId: string,
