@@ -162,23 +162,25 @@ export function Header() {
                 className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
               >
                 {cat.name}
-                <ChevronDown className="w-3 h-3" />
+                {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}
               </Link>
-              <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <ul className="py-2">
-                  {(cat.subcategories ?? []).map((sub) => (
-                    <li key={sub.slug}>
-                      <Link
-                        to="/category/$slug"
-                        params={{ slug: cat.slug }}
-                        className="block px-4 py-2 text-sm text-bunker-text-primary hover:bg-bunker-graphite hover:text-bunker-tan transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {cat.subcategories.length > 0 && (
+                <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <ul className="py-2">
+                    {cat.subcategories.map((sub) => (
+                      <li key={sub.slug}>
+                        <Link
+                          to="/category/$slug"
+                          params={{ slug: sub.slug }}
+                          className="block px-4 py-2 text-sm text-bunker-text-primary hover:bg-bunker-graphite hover:text-bunker-tan transition-colors"
+                        >
+                          {sub.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -202,6 +204,22 @@ export function Header() {
               >
                 {cat.name}
               </Link>
+              {cat.subcategories.length > 0 && (
+                <ul className="pb-2 pl-4">
+                  {cat.subcategories.map((sub) => (
+                    <li key={sub.slug}>
+                      <Link
+                        to="/category/$slug"
+                        params={{ slug: sub.slug }}
+                        onClick={() => setOpenMenu(false)}
+                        className="block py-2 text-sm text-bunker-text-secondary hover:text-bunker-tan"
+                      >
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

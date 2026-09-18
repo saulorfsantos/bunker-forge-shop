@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { BRAZIL_REGION_ID, PRODUCT_LIST_FIELDS, sdk } from "@/lib/medusa";
-import type { Category, Product } from "@/types/product";
+import type { Product } from "@/types/product";
 import placeholderImage from "@/assets/logo-shield.png";
 import { resolveLocalProductImages } from "@/lib/product-images";
+import { mapMedusaCategory, type MedusaCategoryNode } from "@/lib/category-hierarchy";
 import {
   mapMedusaProduct,
   mapMedusaVariant,
@@ -10,12 +11,6 @@ import {
   type MedusaProduct,
   type MedusaVariant,
 } from "@/lib/catalog";
-
-type MedusaCategory = {
-  id: string;
-  name: string;
-  handle: string;
-};
 
 const PRODUCT_DETAIL_FIELDS =
   "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,*variants,+variants.inventory_quantity,*options";
@@ -52,13 +47,6 @@ export type ProductDetail = Product & {
   options: ProductOptionDetail[];
 };
 
-const CATEGORY_ICON_BY_HANDLE: Record<string, Category["icon"]> = {
-  airsoft: "Crosshair",
-  pressao: "Target",
-  acessorios: "Shield",
-  cutelaria: "Swords",
-};
-
 export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDetail {
   const base = mapMedusaProduct(product, placeholderImage, resolveLocalProductImages);
 
@@ -71,15 +59,6 @@ export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDet
       title: option.title,
       values: (option.values ?? []).map((value) => value.value),
     })),
-  };
-}
-
-function mapMedusaCategory(category: MedusaCategory): Category {
-  return {
-    slug: category.handle,
-    name: category.name,
-    icon: CATEGORY_ICON_BY_HANDLE[category.handle] ?? "Crosshair",
-    subcategories: [],
   };
 }
 
@@ -166,10 +145,12 @@ export function useCategories() {
     queryFn: async () => {
       const { product_categories } = await sdk.store.category.list({
         limit: 50,
-        fields: "id,name,handle",
+        parent_category_id: null,
+        include_descendants_tree: true,
+        fields: "id,name,handle,*category_children",
       });
 
-      return (product_categories as MedusaCategory[])
+      return (product_categories as MedusaCategoryNode[])
         .map(mapMedusaCategory)
         .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     },

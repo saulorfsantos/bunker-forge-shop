@@ -248,7 +248,7 @@ function CheckoutPage() {
           <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-bunker-tan">
-                Protocolo de aquisição
+                Finalização da compra
               </p>
               <h1 className="mt-1 font-display text-3xl uppercase tracking-wider md:text-4xl">
                 Finalizar pedido
