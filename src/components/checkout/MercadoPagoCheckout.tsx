@@ -141,7 +141,7 @@ export function MercadoPagoCheckout({
     if (!completionLock.current.tryAcquire()) return;
     cancelPolling();
     setPhase("success");
-    setMessage("Pagamento confirmado pelo backend. Registrando o pedido...");
+    setMessage("Pagamento confirmado. Finalizando seu pedido...");
     try {
       const order = await api.completeCart(cart.id);
       if (!mounted.current) return;
@@ -165,9 +165,7 @@ export function MercadoPagoCheckout({
       if (state.outcome === "failed") {
         activeSessionProvider.current = null;
         setPhase("recoverable-error");
-        setMessage(
-          `O pagamento foi encerrado pelo backend (${state.status}). Inicie uma nova tentativa.`,
-        );
+        setMessage(`O pagamento foi encerrado (${state.status}). Inicie uma nova tentativa.`);
         return;
       }
       if (state.outcome === "challenge") {
@@ -180,7 +178,7 @@ export function MercadoPagoCheckout({
         setPix(extractPixPresentation(session));
       }
       setPhase("pending");
-      setMessage("Pagamento criado. Aguardando confirmação do backend...");
+      setMessage("Aguardando confirmação do pagamento...");
       if (pollAfterPending) {
         // The polling lifecycle is started by the caller after this state is committed.
       }
@@ -204,7 +202,7 @@ export function MercadoPagoCheckout({
             setPix(extractPixPresentation(session));
           }
           if (state.outcome === "pending" || state.outcome === "challenge") {
-            setMessage(`Aguardando confirmação do backend (${state.status})...`);
+            setMessage("Aguardando confirmação do pagamento...");
           }
         },
       })
@@ -269,7 +267,7 @@ export function MercadoPagoCheckout({
           setMethod(recoveredMethod);
           setShouldMountCard(false);
           setPhase("loading");
-          setMessage("Recuperando a tentativa de pagamento do backend...");
+          setMessage("Consultando sua tentativa de pagamento...");
           void acceptSession(recovered).catch(showError);
           return () => {
             mounted.current = false;
@@ -331,7 +329,7 @@ export function MercadoPagoCheckout({
     setMessage(
       nextMethod === "pix"
         ? "Informe o CPF do pagador para gerar um novo Pix."
-        : "Use o formulário seguro do Mercado Pago para tokenizar o cartão.",
+        : "Use o formulário seguro do Mercado Pago para pagar com cartão.",
     );
   };
 
@@ -355,7 +353,7 @@ export function MercadoPagoCheckout({
     setPix(null);
     setChallenge(null);
     setPhase("loading");
-    setMessage("Criando uma nova sessão Pix no backend...");
+    setMessage("Gerando seu Pix...");
     try {
       const { session } = await api.initiatePaymentSession(
         cart.id,
@@ -376,7 +374,7 @@ export function MercadoPagoCheckout({
       cancelPolling();
       setChallenge(null);
       setPhase("loading");
-      setMessage("Token recebido no browser. Iniciando a sessão no backend...");
+      setMessage("Processando pagamento...");
       try {
         const data = buildCardSessionData(formData, cart.total ?? 0);
         const { session } = await api.initiatePaymentSession(
@@ -413,7 +411,7 @@ export function MercadoPagoCheckout({
 
   const retryStatus = () => {
     setPhase("pending");
-    setMessage("Consultando novamente o estado no backend...");
+    setMessage("Consultando o pagamento novamente...");
     startPolling(methodToProviderId(method), "recover-session");
   };
 
@@ -427,7 +425,7 @@ export function MercadoPagoCheckout({
         <div>
           <h2 className="font-display text-xl uppercase tracking-wider">Pagamento seguro</h2>
           <p className="text-xs text-bunker-text-secondary">
-            Tokenização no navegador e confirmação autoritativa pelo backend.
+            Seus dados de pagamento são processados com segurança pelo Mercado Pago.
           </p>
         </div>
       </div>
@@ -485,7 +483,7 @@ export function MercadoPagoCheckout({
           onReady={() => {
             if (phase !== "pending" && phase !== "challenge" && phase !== "success") {
               setPhase("ready");
-              setMessage("Formulário seguro pronto. Os dados brutos ficam no MercadoPago.js.");
+              setMessage("Formulário seguro pronto para pagamento.");
             }
           }}
           onSubmit={submitCardToken}
@@ -497,7 +495,7 @@ export function MercadoPagoCheckout({
           challenge={challenge}
           onCheck={() => {
             setPhase("pending");
-            setMessage("Aguardando o backend confirmar o resultado do 3DS...");
+            setMessage("Aguardando confirmação do pagamento...");
             startPolling(MERCADO_PAGO_CARD_PROVIDER_ID, "post-challenge");
           }}
         />
@@ -509,7 +507,7 @@ export function MercadoPagoCheckout({
           onClick={retryStatus}
           className="mt-4 flex w-full items-center justify-center gap-2 border border-bunker-tan px-4 py-3 text-xs font-bold uppercase tracking-wider text-bunker-tan transition-colors hover:bg-bunker-tan hover:text-bunker-black"
         >
-          <RefreshCw className="h-4 w-4" /> Consultar backend novamente
+          <RefreshCw className="h-4 w-4" /> Consultar pagamento novamente
         </button>
       )}
 
@@ -649,7 +647,7 @@ function PixPanel({
             {pix.qrCodeBase64 ? (
               <img
                 src={`data:image/png;base64,${pix.qrCodeBase64}`}
-                alt="QR Code Pix retornado pelo backend"
+                alt="QR Code Pix para pagamento"
                 className="mx-auto aspect-square w-full max-w-[180px] bg-white p-2"
               />
             ) : (
@@ -772,8 +770,7 @@ function CardPaymentBrick({
       <div id={containerId} aria-label="Formulário seguro de cartão do Mercado Pago" />
       <p className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed text-bunker-text-secondary">
         <LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0 text-bunker-military-light" />
-        Número e código de segurança são processados diretamente pelo MercadoPago.js e não entram no
-        estado da loja nem na requisição ao Medusa.
+        Seus dados do cartão são processados com segurança pelo Mercado Pago.
       </p>
     </div>
   );
@@ -830,7 +827,7 @@ function ThreeDSPanel({
       </p>
       <p className="mt-2 text-sm text-bunker-text-secondary">
         O desafio será enviado diretamente para <strong>{challenge.hostname}</strong>. A janela não
-        confirma o pagamento; o resultado final continuará vindo do backend.
+        confirma o pagamento; aguarde a confirmação do resultado após concluir a verificação.
       </p>
       <button
         type="button"
@@ -862,7 +859,7 @@ function ThreeDSPanel({
         disabled={!started}
         className="mt-3 w-full border border-bunker-tan px-4 py-3 text-xs font-bold uppercase tracking-wider text-bunker-tan disabled:opacity-50"
       >
-        Concluí no emissor — consultar backend
+        Concluí no emissor — consultar pagamento
       </button>
     </section>
   );

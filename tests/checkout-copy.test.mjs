@@ -43,11 +43,28 @@ test("order identification never falls back to the internal order id", () => {
   assert.equal(getOrderDisplayLabel(undefined), "Identificação indisponível");
 });
 
-test("checkout copy presents Pix and browser-tokenized card as the primary payment path", () => {
+test("checkout payment copy presents Pix and card in customer language", () => {
   assert.match(checkoutSource, /MercadoPagoCheckout/);
+  assert.match(checkoutSource, /Finalização da compra/);
+  assert.match(checkoutSource, /Finalizar pedido/);
   assert.match(paymentSource, /label="Pix"/);
   assert.match(paymentSource, /label="Cartão"/);
-  assert.match(paymentSource, /Tokenização no navegador/);
+  assert.match(
+    paymentSource,
+    /Seus dados de pagamento são processados com segurança pelo Mercado Pago\./,
+  );
+  assert.match(paymentSource, /Formulário seguro pronto para pagamento\./);
+  assert.match(paymentSource, /Processando pagamento\.\.\./);
+  assert.match(paymentSource, /Aguardando confirmação do pagamento\.\.\./);
+  assert.match(paymentSource, /Pagamento confirmado\. Finalizando seu pedido\.\.\./);
+  assert.doesNotMatch(
+    paymentSource,
+    /Tokenização no navegador|token recebido|MercadoPago\.js|backend\s*\(/i,
+  );
+  assert.doesNotMatch(
+    paymentSource,
+    /(?:"|>)[^"\n<>]*(?:backend|tokenização|token recebido|MercadoPago\.js)/i,
+  );
   assert.doesNotMatch(checkoutSource, /pagamento continuará pendente/i);
   assert.doesNotMatch(paymentSource, /entrará em contato para combinar o pagamento/i);
 });
