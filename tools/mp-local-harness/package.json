@@ -1,0 +1,10 @@
+{
+  "name": "@bunker81/mp-local-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "mock": "node mock-backend.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}
