@@ -61,6 +61,7 @@ import {
   mountCardPaymentBrick,
   type MercadoPagoSdkLoader,
 } from "@/lib/payments/mercado-pago-browser";
+import { createMercadoPagoCheckoutLifecycle } from "@/lib/payments/mercado-pago-lifecycle";
 
 type PaymentUiState =
   | "idle"
@@ -120,7 +121,10 @@ export function MercadoPagoCheckout({
   const submissionLock = useRef(createSubmissionLock());
   const completionLock = useRef(createSubmissionLock());
   const activeSessionProvider = useRef<MercadoPagoProviderId | null>(null);
+  const checkoutLifecycle = useRef(createMercadoPagoCheckoutLifecycle());
+  const onOrderRef = useRef(onOrder);
   const mounted = useRef(true);
+  onOrderRef.current = onOrder;
 
   const cancelPolling = useCallback(() => {
     pollingController.current?.abort();
@@ -145,12 +149,12 @@ export function MercadoPagoCheckout({
     try {
       const order = await api.completeCart(cart.id);
       if (!mounted.current) return;
-      await onOrder(order as OrderReceipt);
+      await onOrderRef.current(order as OrderReceipt);
     } catch (error) {
       completionLock.current.release();
       if (mounted.current) showError(error);
     }
-  }, [api, cancelPolling, cart.id, onOrder, showError]);
+  }, [api, cancelPolling, cart.id, showError]);
 
   const applySession = useCallback(
     async (session: MercadoPagoPaymentSession, pollAfterPending: boolean) => {
@@ -247,19 +251,46 @@ export function MercadoPagoCheckout({
     [applySession, startPolling],
   );
 
+  const initializationContext = useRef({ cart, capabilities, acceptSession, showError });
+  initializationContext.current = { cart, capabilities, acceptSession, showError };
+
   useEffect(() => {
+    const lifecycle = checkoutLifecycle.current;
     mounted.current = true;
+    return () => {
+      mounted.current = false;
+      lifecycle.reset();
+      cancelPolling();
+    };
+  }, [cancelPolling]);
+
+  useEffect(() => {
+    if (!checkoutLifecycle.current.beginCart(cart.id)) return;
+
+    cancelPolling();
+    submissionLock.current.release();
+    completionLock.current.release();
+    activeSessionProvider.current = null;
+    setPix(null);
+    setCopied(false);
+    setChallenge(null);
+    setCpfError(null);
+
+    const {
+      cart: initialCart,
+      capabilities,
+      acceptSession: acceptInitialSession,
+      showError: showInitialError,
+    } = initializationContext.current;
+
     if (capabilities.methods.length === 0) {
       setPhase("fatal-error");
       setMessage("Nenhuma forma de pagamento compatível está disponível no momento.");
-      return () => {
-        mounted.current = false;
-        cancelPolling();
-      };
+      return;
     }
 
     try {
-      const recovered = findRecoverablePaymentSession(cart.payment_collection);
+      const recovered = findRecoverablePaymentSession(initialCart.payment_collection);
       if (recovered) {
         const recoveredMethod = providerIdToMethod(recovered.provider_id);
         if (!recoveredMethod) throw new PaymentContractError("O método recuperado é inválido.");
@@ -268,11 +299,8 @@ export function MercadoPagoCheckout({
           setShouldMountCard(false);
           setPhase("loading");
           setMessage("Consultando sua tentativa de pagamento...");
-          void acceptSession(recovered).catch(showError);
-          return () => {
-            mounted.current = false;
-            cancelPolling();
-          };
+          void acceptInitialSession(recovered).catch(showInitialError);
+          return;
         }
       }
 
@@ -288,14 +316,9 @@ export function MercadoPagoCheckout({
             : "Cartão está disponível para este checkout.",
       );
     } catch (error) {
-      showError(error);
+      showInitialError(error);
     }
-
-    return () => {
-      mounted.current = false;
-      cancelPolling();
-    };
-  }, [acceptSession, cancelPolling, capabilities, cart.payment_collection, showError]);
+  }, [cancelPolling, cart.id]);
 
   const selectMethod = (nextMethod: MercadoPagoMethod) => {
     if (phase === "loading" || phase === "success") return;
