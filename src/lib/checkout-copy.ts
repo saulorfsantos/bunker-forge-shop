@@ -1,5 +1,7 @@
 const PAYMENT_OPTION_LABELS: Record<string, string> = {
   pp_system_default: "Pagamento a combinar",
+  "pp_mercadopago-pix_mercadopago": "Pix",
+  "pp_mercadopago-card_mercadopago": "Cartão",
 };
 
 const ORDER_STATUS_LABELS: Record<string, string> = {

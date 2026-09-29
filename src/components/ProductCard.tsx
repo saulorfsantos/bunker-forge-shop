@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
-import { useState } from "react";
 import type { Product } from "@/types/product";
 import { BunkerBadge } from "./BunkerBadge";
 import { PriceTag } from "./PriceTag";
@@ -8,7 +7,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import placeholderImage from "@/assets/logo-shield.png";
+import { SafeProductImage } from "./SafeProductImage";
 
 interface ProductCardProps {
   product: Product;
@@ -19,7 +18,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addItem, isPending } = useCart();
   const fav = isFavorite(product.id);
-  const [imageSrc, setImageSrc] = useState(product.images[0] ?? placeholderImage);
   const canAddDirectly = Boolean(
     product.defaultVariantId && product.isAvailable && product.priceAvailable,
   );
@@ -36,12 +34,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
         params={{ id: product.id }}
         className="relative aspect-square bg-bunker-black overflow-hidden block"
       >
-        <img
-          src={imageSrc}
+        <SafeProductImage
+          src={product.images[0]}
           alt={product.name}
           loading="lazy"
-          onError={() => setImageSrc(placeholderImage)}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
+          className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105 opacity-90"
         />
 
         <div className="absolute top-2 left-2 flex flex-col gap-1">

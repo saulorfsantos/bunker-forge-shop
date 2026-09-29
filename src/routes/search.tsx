@@ -72,8 +72,12 @@ function SearchPage() {
         {q && !isLoading && !isError && results.length === 0 && (
           <div className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-10 text-center">
             <Search className="w-10 h-10 mx-auto text-bunker-tan mb-3" />
-            <p className="text-bunker-text-primary font-semibold">Nenhum produto encontrado para "{q}".</p>
-            <p className="text-bunker-text-secondary text-sm mt-2">Tente outros termos ou explore por categoria.</p>
+            <p className="text-bunker-text-primary font-semibold">
+              Nenhum produto encontrado para "{q}".
+            </p>
+            <p className="text-bunker-text-secondary text-sm mt-2">
+              Tente outros termos ou explore por categoria.
+            </p>
             <Link
               to="/"
               className="inline-block mt-5 border border-bunker-tan text-bunker-tan uppercase font-bold tracking-wider text-xs px-5 py-2 rounded-sm hover:bg-bunker-tan/10 transition-colors"

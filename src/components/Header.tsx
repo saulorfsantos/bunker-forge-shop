@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Heart, Menu, X, ChevronDown } from "lucide-react";
 import logoShield from "@/assets/logo-shield.png";
 import { useCategories, useSearchProducts } from "@/hooks/useMedusaProducts";
 import { formatBRL } from "@/data/mockData";
@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
+import { SafeProductImage } from "./SafeProductImage";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const AUTOCOMPLETE_LIMIT = 6;
@@ -94,25 +95,18 @@ export function Header() {
           />
 
           <div className="flex items-center gap-1 md:gap-3 ml-auto">
-            <button
-              type="button"
-              aria-label="Conta"
-              className="hidden sm:flex p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
-            >
-              <User className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              aria-label={`Favoritos (${favorites.length})`}
-              className="relative p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
-            >
-              <Heart className="w-5 h-5" />
-              {favorites.length > 0 && (
+            {favorites.length > 0 && (
+              <span
+                aria-label={`Favoritos salvos neste navegador (${favorites.length})`}
+                title="Favoritos salvos neste navegador"
+                className="relative p-2 text-bunker-text-primary"
+              >
+                <Heart className="w-5 h-5 fill-bunker-tan text-bunker-tan" />
                 <span className="absolute top-0 right-0 bg-bunker-tan text-bunker-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {favorites.length}
                 </span>
-              )}
-            </button>
+              </span>
+            )}
             <Link
               to="/cart"
               aria-label={`Carrinho (${itemCount})`}
@@ -168,23 +162,25 @@ export function Header() {
                 className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
               >
                 {cat.name}
-                <ChevronDown className="w-3 h-3" />
+                {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}
               </Link>
-              <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <ul className="py-2">
-                  {(cat.subcategories ?? []).map((sub) => (
-                    <li key={sub.slug}>
-                      <Link
-                        to="/category/$slug"
-                        params={{ slug: cat.slug }}
-                        className="block px-4 py-2 text-sm text-bunker-text-primary hover:bg-bunker-graphite hover:text-bunker-tan transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {cat.subcategories.length > 0 && (
+                <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <ul className="py-2">
+                    {cat.subcategories.map((sub) => (
+                      <li key={sub.slug}>
+                        <Link
+                          to="/category/$slug"
+                          params={{ slug: sub.slug }}
+                          className="block px-4 py-2 text-sm text-bunker-text-primary hover:bg-bunker-graphite hover:text-bunker-tan transition-colors"
+                        >
+                          {sub.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -208,6 +204,22 @@ export function Header() {
               >
                 {cat.name}
               </Link>
+              {cat.subcategories.length > 0 && (
+                <ul className="pb-2 pl-4">
+                  {cat.subcategories.map((sub) => (
+                    <li key={sub.slug}>
+                      <Link
+                        to="/category/$slug"
+                        params={{ slug: sub.slug }}
+                        onClick={() => setOpenMenu(false)}
+                        className="block py-2 text-sm text-bunker-text-secondary hover:text-bunker-tan"
+                      >
+                        {sub.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
@@ -306,11 +318,11 @@ function SearchFormWithSuggestions({
                     onClick={onCloseDropdown}
                     className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
                   >
-                    <img
+                    <SafeProductImage
                       src={product.images[0]}
                       alt=""
                       draggable={false}
-                      className="w-10 h-10 shrink-0 rounded-sm object-cover bg-bunker-black border border-bunker-graphite pointer-events-none"
+                      className="w-10 h-10 shrink-0 rounded-sm object-contain p-1 bg-bunker-black border border-bunker-graphite pointer-events-none"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-bunker-text-primary line-clamp-1">

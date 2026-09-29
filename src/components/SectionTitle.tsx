@@ -9,7 +9,13 @@ interface SectionTitleProps {
   action?: ReactNode;
 }
 
-export function SectionTitle({ title, subtitle, align = "left", className, action }: SectionTitleProps) {
+export function SectionTitle({
+  title,
+  subtitle,
+  align = "left",
+  className,
+  action,
+}: SectionTitleProps) {
   return (
     <div
       className={cn(

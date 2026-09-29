@@ -71,7 +71,7 @@ function OrderConfirmationPage() {
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-bunker-text-secondary">
             {isVerified
-              ? "Seu pedido foi registrado. Nenhuma cobrança foi realizada neste momento. A Bunker 81 entrará em contato para combinar o pagamento."
+              ? "Pagamento confirmado e pedido registrado. Você receberá as próximas atualizações no e-mail informado no checkout."
               : "Não foi possível exibir os detalhes do pedido. Entre em contato com a Bunker 81 para receber orientação."}
           </p>
         </div>

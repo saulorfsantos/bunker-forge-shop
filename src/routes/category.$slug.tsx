@@ -126,8 +126,26 @@ function CategoryPage() {
     );
   }
 
-  if (categoryQuery.isError || !categoryQuery.data) {
+  if (categoryQuery.isError) {
+    return (
+      <CatalogErrorState
+        message="Não foi possível carregar esta categoria."
+        onRetry={() => void categoryQuery.refetch()}
+      />
+    );
+  }
+
+  if (!categoryQuery.data) {
     throw notFound();
+  }
+
+  if (productsQuery.isError) {
+    return (
+      <CatalogErrorState
+        message="Não foi possível carregar os produtos desta categoria."
+        onRetry={() => void productsQuery.refetch()}
+      />
+    );
   }
 
   const category: Category = {
@@ -303,6 +321,26 @@ function CategoryPage() {
             )}
           </div>
         </div>
+      </div>
+    </Layout>
+  );
+}
+
+function CatalogErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <Layout>
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <h1 className="font-display text-3xl uppercase tracking-wider">
+          Catálogo temporariamente indisponível
+        </h1>
+        <p className="mt-3 text-sm text-bunker-text-secondary">{message} Tente novamente.</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-6 border border-bunker-tan px-5 py-2 text-xs font-bold uppercase tracking-wider text-bunker-tan transition-colors hover:bg-bunker-tan/10"
+        >
+          Tentar novamente
+        </button>
       </div>
     </Layout>
   );

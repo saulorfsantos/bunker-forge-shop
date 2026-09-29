@@ -57,11 +57,10 @@ function Home() {
               Bunker 81 — Onde a missão começa
             </p>
             <h1 className="font-display uppercase text-bunker-text-primary text-5xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-wider">
-              Equipamento <span className="text-bunker-tan">tático</span> de alta performance
+              Equipamento <span className="text-bunker-tan">tático</span> para sua missão
             </h1>
             <p className="mt-5 text-base md:text-lg text-bunker-text-secondary max-w-xl">
-              Arsenal completo para operadores sérios. Airsoft, armas de pressão e gear tático de
-              verdade.
+              Airsoft, armas de pressão e equipamentos táticos disponíveis no catálogo da Bunker 81.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -123,7 +122,7 @@ function Home() {
         <div className="max-w-[1400px] mx-auto px-4 py-14">
           <SectionTitle
             title="Gear & Vestuário Tático"
-            subtitle="Acessórios, coletes e equipamentos para operações reais"
+            subtitle="Acessórios, coletes e equipamentos disponíveis no catálogo"
           />
           <ProductCarousel
             products={gearQuery.data ?? []}

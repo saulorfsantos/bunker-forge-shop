@@ -8,12 +8,19 @@ import {
 } from "../src/lib/checkout-copy.ts";
 
 const checkoutSource = readFileSync(new URL("../src/routes/checkout.tsx", import.meta.url), "utf8");
+const paymentSource = readFileSync(
+  new URL("../src/components/checkout/MercadoPagoCheckout.tsx", import.meta.url),
+  "utf8",
+);
 const confirmationSource = readFileSync(
   new URL("../src/routes/order-confirmation.tsx", import.meta.url),
   "utf8",
 );
+const cartSource = readFileSync(new URL("../src/routes/cart.tsx", import.meta.url), "utf8");
 
 test("payment options use customer-facing labels without exposing internal identifiers", () => {
+  assert.equal(getPaymentOptionLabel("pp_mercadopago-pix_mercadopago"), "Pix");
+  assert.equal(getPaymentOptionLabel("pp_mercadopago-card_mercadopago"), "Cartão");
   assert.equal(getPaymentOptionLabel("pp_system_default"), "Pagamento a combinar");
   assert.equal(getPaymentOptionLabel("pp_internal_example"), "Pagamento a combinar");
 });
@@ -36,17 +43,50 @@ test("order identification never falls back to the internal order id", () => {
   assert.equal(getOrderDisplayLabel(undefined), "Identificação indisponível");
 });
 
-test("checkout copy states that no charge occurs and does not suggest a later card step", () => {
-  assert.match(checkoutSource, /Nenhuma cobrança é realizada neste checkout\./);
-  assert.match(checkoutSource, /o pagamento continuará pendente/);
-  assert.doesNotMatch(checkoutSource, /dados de cartão/i);
-  assert.doesNotMatch(checkoutSource, /processado com segurança/i);
+test("checkout payment copy presents Pix and card in customer language", () => {
+  assert.match(checkoutSource, /MercadoPagoCheckout/);
+  assert.match(checkoutSource, /Finalização da compra/);
+  assert.match(checkoutSource, /Finalizar pedido/);
+  assert.match(paymentSource, /label="Pix"/);
+  assert.match(paymentSource, /label="Cartão"/);
+  assert.match(
+    paymentSource,
+    /Seus dados de pagamento são processados com segurança pelo Mercado Pago\./,
+  );
+  assert.match(paymentSource, /Formulário seguro pronto para pagamento\./);
+  assert.match(paymentSource, /Processando pagamento\.\.\./);
+  assert.match(paymentSource, /Aguardando confirmação do pagamento\.\.\./);
+  assert.match(paymentSource, /Pagamento confirmado\. Finalizando seu pedido\.\.\./);
+  assert.doesNotMatch(
+    paymentSource,
+    /Tokenização no navegador|token recebido|MercadoPago\.js|backend\s*\(/i,
+  );
+  assert.doesNotMatch(
+    paymentSource,
+    /(?:"|>)[^"\n<>]*(?:backend|tokenização|token recebido|MercadoPago\.js)/i,
+  );
+  assert.doesNotMatch(checkoutSource, /pagamento continuará pendente/i);
+  assert.doesNotMatch(paymentSource, /entrará em contato para combinar o pagamento/i);
 });
 
-test("confirmation distinguishes a registered order from an unpaid order", () => {
+test("confirmation is shown only after backend-confirmed payment and cart completion", () => {
   assert.match(confirmationSource, /Pedido registrado/);
-  assert.match(confirmationSource, /Nenhuma cobrança foi realizada neste momento\./);
-  assert.match(confirmationSource, /entrará em contato para combinar o pagamento/);
-  assert.doesNotMatch(confirmationSource, /Pedido confirmado com segurança/);
+  assert.match(confirmationSource, /Pagamento confirmado e pedido registrado\./);
+  assert.doesNotMatch(confirmationSource, /Nenhuma cobrança foi realizada/i);
+  assert.doesNotMatch(confirmationSource, /combinar o pagamento/i);
   assert.doesNotMatch(confirmationSource, /Referência: \{orderId\}/);
+});
+
+test("checkout presents store pickup as a factual receiving option", () => {
+  assert.match(checkoutSource, /entrega ou retirada em loja/i);
+  assert.match(checkoutSource, /Entrega ou retirada/);
+  assert.match(checkoutSource, /Recebimento/);
+  assert.match(cartSource, /O total final será confirmado após a seleção da entrega ou retirada\./);
+  assert.doesNotMatch(cartSource, /Finalizar Compra/);
+});
+
+test("checkout bootstrap failure remains visible and states that the cart is preserved", () => {
+  assert.match(checkoutSource, /Não foi possível abrir o checkout/);
+  assert.match(checkoutSource, /Seu carrinho continua preservado\./);
+  assert.match(checkoutSource, /Tentar novamente/);
 });

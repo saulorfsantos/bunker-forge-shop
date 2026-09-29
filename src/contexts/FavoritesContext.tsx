@@ -38,9 +38,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       favorites,
       isFavorite: (id) => favorites.includes(id),
       toggleFavorite: (id) =>
-        setFavorites((prev) =>
-          prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-        ),
+        setFavorites((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
     }),
     [favorites],
   );

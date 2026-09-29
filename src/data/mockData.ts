@@ -1,20 +1,20 @@
 import type { Product, Category } from "@/types/product";
-import p001 from "@/assets/products/p001-m4-cqb.jpg";
-import p002 from "@/assets/products/p002-ak47.jpg";
-import p003 from "@/assets/products/p003-glock17.jpg";
-import p004 from "@/assets/products/p004-bbs.jpg";
-import p005 from "@/assets/products/p005-carabina.jpg";
-import p006 from "@/assets/products/p006-co2-pistol.jpg";
-import p007 from "@/assets/products/p007-chumbinhos.jpg";
-import p008 from "@/assets/products/p008-colete.jpg";
-import p009 from "@/assets/products/p009-reddot.jpg";
-import p010 from "@/assets/products/p010-lanterna.jpg";
-import p011 from "@/assets/products/p011-faca.jpg";
-import p012 from "@/assets/products/p012-multitool.jpg";
-import p013 from "@/assets/products/p013-barraca.jpg";
-import p014 from "@/assets/products/p014-headlamp.jpg";
-import p015 from "@/assets/products/p015-mochila.jpg";
-import p016 from "@/assets/products/p016-magazines.jpg";
+import p001 from "@/assets/products/rifle-de-airsoft-aeg-m4-cqb-tatico/01.jpg";
+import p002 from "@/assets/products/rifle-airsoft-gbb-ak-47-full-metal/01.jpg";
+import p003 from "@/assets/products/pistola-airsoft-glock-17-gbb/01.jpg";
+import p004 from "@/assets/products/bbs-premium-0-25g-pote-4000un-branca/01.jpg";
+import p005 from "@/assets/products/carabina-de-pressao-5-5mm-nitro-piston/01.jpg";
+import p006 from "@/assets/products/pistola-de-pressao-co2-4-5mm-multi-tiro/01.jpg";
+import p007 from "@/assets/products/chumbinho-5-5mm-match-pesado-lata-250un/01.jpg";
+import p008 from "@/assets/products/colete-tatico-plate-carrier-molle-multicam/01.jpg";
+import p009 from "@/assets/products/red-dot-holografico-t1-trilho-20mm/01.jpg";
+import p010 from "@/assets/products/lanterna-tatica-led-1200-lumens-recarregavel/01.jpg";
+import p011 from "@/assets/products/faca-tatica-de-combate-lamina-fixa-12pol/01.jpg";
+import p012 from "@/assets/products/multitool-tatico-18-funcoes-com-estojo/01.jpg";
+import p013 from "@/assets/products/barraca-tatica-4-pessoas-camuflada/01.jpg";
+import p014 from "@/assets/products/lanterna-de-cabeca-led-800-lumens/01.jpg";
+import p015 from "@/assets/products/mochila-tatica-45l-molle-hidratacao/01.jpg";
+import p016 from "@/assets/products/magazine-mid-cap-m4-140-bbs-kit-5un/01.jpg";
 
 export const categories: Category[] = [
   {
