@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { CustomerProvider } from "@/contexts/CustomerContext";
 import mascote from "@/assets/mascote.png";
 
 import appCss from "../styles.css?url";
@@ -111,10 +112,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
-        <FavoritesProvider>
-          <Outlet />
-          <Toaster />
-        </FavoritesProvider>
+        <CustomerProvider>
+          <FavoritesProvider>
+            <Outlet />
+            <Toaster />
+          </FavoritesProvider>
+        </CustomerProvider>
       </CartProvider>
     </QueryClientProvider>
   );

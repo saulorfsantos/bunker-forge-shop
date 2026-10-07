@@ -31,6 +31,7 @@ import {
   type ShippingOption,
 } from "@/lib/checkout";
 import { isMercadoPagoProviderId } from "@/lib/payments/mercado-pago-contract";
+import { useCustomer } from "@/contexts/CustomerContext";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -59,6 +60,7 @@ const emptyAddress: CheckoutAddress = {
 function CheckoutPage() {
   const navigate = useNavigate();
   const { items, isLoading: isCartLoading, markCartCompleted } = useCart();
+  const { customer } = useCustomer();
   const [step, setStep] = useState<CheckoutStep>("address");
   const [cart, setCart] = useState<CheckoutCart | null>(null);
   const [email, setEmail] = useState("");
@@ -81,7 +83,7 @@ function CheckoutPage() {
     void retrieveCheckoutCart(cartId)
       .then(async (activeCart) => {
         setCart(activeCart);
-        setEmail(activeCart.email ?? "");
+        if (activeCart.email) setEmail(activeCart.email);
         const hasRecoverablePayment = activeCart.payment_collection?.payment_sessions?.some(
           (session) => isMercadoPagoProviderId(session.provider_id),
         );
@@ -94,6 +96,16 @@ function CheckoutPage() {
       .catch(() => setError("Não foi possível carregar seu checkout. Tente novamente."))
       .finally(() => setIsBooting(false));
   }, []);
+
+  useEffect(() => {
+    if (!customer) return;
+    setEmail((current) => current || customer.email);
+    setAddress((current) => ({
+      ...current,
+      first_name: current.first_name || customer.first_name || "",
+      last_name: current.last_name || customer.last_name || "",
+    }));
+  }, [customer]);
 
   useEffect(() => {
     if (!cart?.id) return;

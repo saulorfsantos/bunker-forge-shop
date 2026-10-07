@@ -134,3 +134,18 @@ ser configurados ou expostos no storefront.
 O checkout usa as rotas Store API nativas para obter/criar a payment collection, iniciar uma payment
 session, consultar o carrinho e completar o carrinho após confirmação autoritativa do pagamento. Não
 há endpoint custom no browser.
+
+## Área do cliente
+
+A área em `/account` usa Customers/Auth nativos do Medusa. O token JWT do cliente fica somente em
+`sessionStorage`, é removido no logout e nunca é substituído por credencial administrativa. Um
+carrinho criado como convidado é transferido explicitamente após login; no logout, o navegador passa
+a usar um novo carrinho convidado.
+
+Pedidos são consultados exclusivamente pela rota autenticada de listagem, inclusive no detalhe. O
+backend deve aplicar a middleware de proprietário da PR complementar antes do go-live; ela bloqueia
+`GET /store/orders/:id` para visitantes e para outro cliente. A confirmação imediata do checkout
+convidado usa somente o recibo retornado pela conclusão do carrinho e guardado na sessão do browser.
+
+A recuperação de senha usa o token temporário e de uso único do Medusa. O envio real depende da
+configuração SendGrid e da URL pública do storefront descritas na PR complementar do backend.

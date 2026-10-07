@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, ShoppingCart, Heart, Menu, X, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Heart, Menu, X, ChevronDown, UserRound } from "lucide-react";
 import logoShield from "@/assets/logo-shield.png";
 import { useCategories, useSearchProducts } from "@/hooks/useMedusaProducts";
 import { formatBRL } from "@/data/mockData";
@@ -9,6 +9,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 import { SafeProductImage } from "./SafeProductImage";
+import { useCustomer } from "@/contexts/CustomerContext";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const AUTOCOMPLETE_LIMIT = 6;
@@ -18,6 +19,7 @@ export function Header() {
   const { data: categories = [] } = useCategories();
   const { itemCount } = useCart();
   const { favorites } = useFavorites();
+  const { customer } = useCustomer();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -95,6 +97,13 @@ export function Header() {
           />
 
           <div className="flex items-center gap-1 md:gap-3 ml-auto">
+            <Link
+              to={customer ? "/account" : "/login"}
+              aria-label={customer ? "Minha conta" : "Entrar"}
+              className="relative p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
+            >
+              <UserRound className="w-5 h-5" />
+            </Link>
             {favorites.length > 0 && (
               <span
                 aria-label={`Favoritos salvos neste navegador (${favorites.length})`}

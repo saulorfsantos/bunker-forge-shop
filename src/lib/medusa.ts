@@ -14,6 +14,11 @@ if (!MEDUSA_PUBLISHABLE_KEY) {
 export const sdk = new Medusa({
   baseUrl: MEDUSA_BACKEND_URL,
   publishableKey: MEDUSA_PUBLISHABLE_KEY,
+  auth: {
+    type: "jwt",
+    jwtTokenStorageMethod: "session",
+    jwtTokenStorageKey: "bunker81-customer-token",
+  },
 });
 
 /** Região Brasil (BRL) — necessária para calculated_price nos produtos. */

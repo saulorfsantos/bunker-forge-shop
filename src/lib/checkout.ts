@@ -128,7 +128,9 @@ export async function listPaymentProviders(): Promise<PaymentProvider[]> {
 }
 
 export async function retrieveOrder(orderId: string): Promise<OrderReceipt> {
-  const { order } = await sdk.store.order.retrieve(orderId, { fields: ORDER_FIELDS });
+  const { orders } = await sdk.store.order.list({ id: orderId, fields: ORDER_FIELDS, limit: 1 });
+  const order = orders[0];
+  if (!order) throw new Error("Order is not available to the authenticated customer.");
   return order as OrderReceipt;
 }
 
