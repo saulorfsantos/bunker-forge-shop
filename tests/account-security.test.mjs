@@ -18,6 +18,18 @@ test("customer JWT is scoped to sessionStorage and logout rotates the browser ca
   assert.match(cartSource, /sdk\.store\.cart\.transferCart\(cartId/);
 });
 
+test("Medusa public config is available to both the browser bundle and Cloudflare SSR", () => {
+  assert.match(
+    sdkSource,
+    /import\.meta\.env\.VITE_MEDUSA_BACKEND_URL\s*\|\|\s*runtimeEnv\?\.VITE_MEDUSA_BACKEND_URL/,
+  );
+  assert.match(
+    sdkSource,
+    /import\.meta\.env\.VITE_MEDUSA_PUBLISHABLE_KEY\s*\|\|\s*runtimeEnv\?\.VITE_MEDUSA_PUBLISHABLE_KEY/,
+  );
+  assert.doesNotMatch(sdkSource, /process\.env\.(?:JWT|COOKIE|SENDGRID|ADMIN|DATABASE)/);
+});
+
 test("customer order detail is derived only from the authenticated list endpoint", () => {
   assert.equal((ordersSource.match(/sdk\.store\.order\.list\(/g) ?? []).length, 2);
   assert.doesNotMatch(ordersSource, /sdk\.store\.order\.retrieve\(/);

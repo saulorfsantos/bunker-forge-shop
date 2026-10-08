@@ -149,3 +149,8 @@ convidado usa somente o recibo retornado pela conclusão do carrinho e guardado 
 
 A recuperação de senha usa o token temporário e de uso único do Medusa. O envio real depende da
 configuração SendGrid e da URL pública do storefront descritas na PR complementar do backend.
+
+No deploy Cloudflare, as duas variáveis públicas `VITE_MEDUSA_BACKEND_URL` e
+`VITE_MEDUSA_PUBLISHABLE_KEY` precisam existir como bindings do Worker. O bundle do navegador usa a
+injeção do Vite e o SSR lê os mesmos bindings públicos por `process.env`; nenhuma credencial
+administrativa deve ser configurada no storefront.
