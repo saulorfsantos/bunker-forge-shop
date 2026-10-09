@@ -26,6 +26,8 @@ interface CartContextValue {
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   markCartCompleted: () => void;
+  transferCartToCustomer: () => Promise<void>;
+  startGuestCart: () => Promise<void>;
   getProduct: (lineItemId: string) => Product | undefined;
 }
 
@@ -290,6 +292,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMedusaCart(null);
   }, []);
 
+  const transferCartToCustomer = useCallback(async () => {
+    const cartId = medusaCartRef.current?.id ?? readStoredMedusaCartId();
+    if (!cartId) return;
+
+    try {
+      const { cart } = await sdk.store.cart.transferCart(cartId, {
+        fields: MEDUSA_CART_FIELDS,
+      });
+      setMedusaCart(cart as MedusaCartState);
+    } catch (error) {
+      if (!isCartNotFoundError(error)) throw error;
+      await refreshCart();
+    }
+  }, [refreshCart]);
+
+  const startGuestCart = useCallback(async () => {
+    clearStoredMedusaCartId();
+    medusaCartRef.current = null;
+    setMedusaCart(null);
+    const cart = await fetchOrCreateCart();
+    medusaCartRef.current = cart;
+    setMedusaCart(cart);
+  }, []);
+
   const items = useMemo(() => mapCartToItems(medusaCart), [medusaCart]);
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const totalPrice = useMemo(() => getTotalFromCart(medusaCart), [medusaCart]);
@@ -311,6 +337,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity,
       clearCart,
       markCartCompleted,
+      transferCartToCustomer,
+      startGuestCart,
       getProduct,
     }),
     [
@@ -324,6 +352,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity,
       clearCart,
       markCartCompleted,
+      transferCartToCustomer,
+      startGuestCart,
       getProduct,
     ],
   );

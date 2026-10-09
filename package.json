@@ -12,6 +12,7 @@
     "test:catalog": "tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .test-output --rewriteRelativeImportExtensions --strict --skipLibCheck --types node src/types/product.ts src/lib/product-image-resolver.ts src/lib/catalog.ts src/lib/cart-product.ts src/lib/catalog.test.ts && node --test .test-output/lib/catalog.test.js",
     "test:checkout": "node --test tests/*.test.mjs",
     "test:payments": "node --test tests/mercado-pago-*.test.mjs",
+    "test:account": "node --test tests/account-security.test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
