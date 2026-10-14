@@ -19,6 +19,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AccountOrdersOrderIdRouteImport } from './routes/account.orders.$orderId'
@@ -73,6 +74,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountRoute,
+} as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -102,11 +108,11 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/account/': typeof AccountIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/account': typeof AccountIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
 }
 export interface FileRoutesById {
@@ -133,6 +140,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/account/': typeof AccountIndexRoute
   '/account/orders/$orderId': typeof AccountOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
@@ -150,11 +158,11 @@ export interface FileRouteTypes {
     | '/search'
     | '/category/$slug'
     | '/product/$id'
+    | '/account/'
     | '/account/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account'
     | '/cart'
     | '/checkout'
     | '/forgot-password'
@@ -165,6 +173,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/category/$slug'
     | '/product/$id'
+    | '/account'
     | '/account/orders/$orderId'
   id:
     | '__root__'
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/category/$slug'
     | '/product/$id'
+    | '/account/'
     | '/account/orders/$orderId'
   fileRoutesById: FileRoutesById
 }
@@ -270,6 +280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/': {
+      id: '/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/product/$id': {
       id: '/product/$id'
       path: '/product/$id'
@@ -295,10 +312,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteChildren {
+  AccountIndexRoute: typeof AccountIndexRoute
   AccountOrdersOrderIdRoute: typeof AccountOrdersOrderIdRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
+  AccountIndexRoute: AccountIndexRoute,
   AccountOrdersOrderIdRoute: AccountOrdersOrderIdRoute,
 }
 
