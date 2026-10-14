@@ -14,11 +14,17 @@ import { BRAZIL_REGION_ID, MEDUSA_CART_ID_KEY, sdk } from "@/lib/medusa";
 import placeholderImage from "@/assets/logo-shield.png";
 import { mapLineItemToProduct, type MedusaLineItem } from "@/lib/cart-product";
 import { resolveLocalProductImages } from "@/lib/product-images";
+import { appliedCouponCodes, cartItemAmounts, changeCartCoupon } from "@/lib/cart-promotions";
 
 interface CartContextValue {
   items: CartItem[];
   itemCount: number;
   totalPrice: number | null;
+  subtotalPrice: number | null;
+  discountPrice: number | null;
+  couponCodes: string[];
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: (code: string) => Promise<void>;
   isLoading: boolean;
   isPending: boolean;
   addItem: (variantId: string, quantity?: number) => Promise<void>;
@@ -34,13 +40,19 @@ interface CartContextValue {
 interface MedusaCartState {
   id: string;
   subtotal?: number;
+  item_subtotal?: number;
+  item_total?: number;
+  item_discount_total?: number;
+  promotions?: Array<{ code?: string; is_automatic?: boolean }>;
+  payment_collection?: { status?: string; payment_sessions?: Array<{ status?: string }> } | null;
   items?: MedusaLineItem[];
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const MOCK_STORAGE_KEY = "bunker81-cart";
-const MEDUSA_CART_FIELDS = "*items,*items.variant,*items.product";
+const MEDUSA_CART_FIELDS =
+  "*items,*items.variant,*items.product,+item_subtotal,+item_total,+item_discount_total,*promotions,*payment_collection,*payment_collection.payment_sessions";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -90,10 +102,7 @@ function getProductFromCart(cart: MedusaCartState | null, lineItemId: string): P
 }
 
 function getTotalFromCart(cart: MedusaCartState | null): number | null {
-  if (!cart) return null;
-  if ((cart.items ?? []).some((item) => typeof item.unit_price !== "number")) return null;
-  if (typeof cart.subtotal === "number") return cart.subtotal;
-  return (cart.items ?? []).reduce((sum, item) => sum + item.unit_price! * item.quantity, 0);
+  return cartItemAmounts(cart).total;
 }
 
 function findLineItemById(
@@ -131,6 +140,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, setIsPending] = useState(false);
   const medusaCartRef = useRef<MedusaCartState | null>(null);
+  const couponPending = useRef(false);
 
   useEffect(() => {
     medusaCartRef.current = medusaCart;
@@ -316,9 +326,61 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMedusaCart(cart);
   }, []);
 
+  const changeCoupon = useCallback(
+    async (code: string, action: "add" | "remove") => {
+      if (couponPending.current || isPending)
+        throw new Error("Aguarde a atualização do carrinho antes de aplicar o cupom.");
+      couponPending.current = true;
+      setIsPending(true);
+      try {
+        await withCartRecovery(async (cartId) => {
+          const cart = await changeCartCoupon(
+            {
+              retrieve: async (id) =>
+                (await sdk.store.cart.retrieve(id, { fields: MEDUSA_CART_FIELDS }))
+                  .cart as MedusaCartState,
+              add: async (id, normalized) =>
+                (
+                  await sdk.store.cart.addPromotions(
+                    id,
+                    { promo_codes: [normalized] },
+                    { fields: MEDUSA_CART_FIELDS },
+                  )
+                ).cart as MedusaCartState,
+              remove: async (id, normalized) =>
+                (
+                  await sdk.store.cart.removePromotions(
+                    id,
+                    { promo_codes: [normalized] },
+                    { fields: MEDUSA_CART_FIELDS },
+                  )
+                ).cart as MedusaCartState,
+            },
+            cartId,
+            code,
+            action,
+          );
+          medusaCartRef.current = cart as MedusaCartState;
+          setMedusaCart(cart as MedusaCartState);
+        });
+      } finally {
+        couponPending.current = false;
+        setIsPending(false);
+      }
+    },
+    [isPending, withCartRecovery],
+  );
+  const applyCoupon = useCallback((code: string) => changeCoupon(code, "add"), [changeCoupon]);
+  const removeCoupon = useCallback((code: string) => changeCoupon(code, "remove"), [changeCoupon]);
+
   const items = useMemo(() => mapCartToItems(medusaCart), [medusaCart]);
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const totalPrice = useMemo(() => getTotalFromCart(medusaCart), [medusaCart]);
+  const { subtotal: subtotalPrice, discount: discountPrice } = useMemo(
+    () => cartItemAmounts(medusaCart),
+    [medusaCart],
+  );
+  const couponCodes = useMemo(() => appliedCouponCodes(medusaCart), [medusaCart]);
 
   const getProduct = useCallback(
     (lineItemId: string) => getProductFromCart(medusaCart, lineItemId),
@@ -330,6 +392,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       itemCount,
       totalPrice,
+      subtotalPrice,
+      discountPrice,
+      couponCodes,
+      applyCoupon,
+      removeCoupon,
       isLoading,
       isPending,
       addItem,
@@ -345,6 +412,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       itemCount,
       totalPrice,
+      subtotalPrice,
+      discountPrice,
+      couponCodes,
+      applyCoupon,
+      removeCoupon,
       isLoading,
       isPending,
       addItem,

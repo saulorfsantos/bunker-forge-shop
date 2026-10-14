@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { useCart } from "@/contexts/CartContext";
@@ -19,11 +20,43 @@ function CartPage() {
     updateQuantity,
     removeItem,
     totalPrice,
+    subtotalPrice,
+    discountPrice,
+    couponCodes,
+    applyCoupon,
+    removeCoupon,
     getProduct,
     clearCart,
     isLoading,
     isPending,
   } = useCart();
+  const [coupon, setCoupon] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+
+  async function submitCoupon(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCouponError("");
+    setCouponMessage("");
+    try {
+      await applyCoupon(coupon);
+      setCouponMessage("Cupom aplicado. Confira o total atualizado.");
+      setCoupon("");
+    } catch (error) {
+      setCouponError(error instanceof Error ? error.message : "Não foi possível aplicar o cupom.");
+    }
+  }
+
+  async function deleteCoupon(code: string) {
+    setCouponError("");
+    setCouponMessage("");
+    try {
+      await removeCoupon(code);
+      setCouponMessage("Cupom removido.");
+    } catch (error) {
+      setCouponError(error instanceof Error ? error.message : "Não foi possível remover o cupom.");
+    }
+  }
 
   if (isLoading) {
     return (
@@ -179,7 +212,7 @@ function CartPage() {
                 <dd className="text-xs text-bunker-text-secondary">Definido no checkout</dd>
               </div>
               <div className="border-t border-bunker-graphite pt-3 flex justify-between text-base">
-                <dt className="font-bold uppercase tracking-wider">Subtotal</dt>
+                <dt className="font-bold uppercase tracking-wider">Total dos produtos</dt>
                 <dd className="price-tag text-xl">
                   {totalPrice === null ? "Preço indisponível" : formatBRL(totalPrice)}
                 </dd>
@@ -188,6 +221,60 @@ function CartPage() {
                 O total final será confirmado após a seleção da entrega ou retirada.
               </p>
             </dl>
+            <form onSubmit={submitCoupon} className="mt-5 space-y-2">
+              <label htmlFor="cart-coupon" className="block text-xs uppercase tracking-wider">
+                Cupom de desconto
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="cart-coupon"
+                  value={coupon}
+                  onChange={(event) => setCoupon(event.target.value)}
+                  disabled={isPending}
+                  maxLength={100}
+                  autoComplete="off"
+                  className="min-w-0 flex-1 border border-bunker-graphite bg-bunker-black px-3 py-2 text-sm uppercase"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending || !coupon.trim()}
+                  className="border border-bunker-tan px-3 py-2 text-xs text-bunker-tan disabled:opacity-50"
+                >
+                  Aplicar
+                </button>
+              </div>
+              {couponCodes.map((code) => (
+                <div key={code} className="flex items-center justify-between text-xs">
+                  <span>{code}</span>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => void deleteCoupon(code)}
+                    className="text-bunker-tan disabled:opacity-50"
+                  >
+                    Remover
+                  </button>
+                </div>
+              ))}
+              {typeof subtotalPrice === "number" && (
+                <p className="text-xs text-bunker-text-secondary">
+                  Produtos: {formatBRL(subtotalPrice)}
+                </p>
+              )}
+              {typeof discountPrice === "number" && discountPrice > 0 && (
+                <p className="text-xs text-bunker-tan">Desconto: −{formatBRL(discountPrice)}</p>
+              )}
+              {couponError && (
+                <p role="alert" className="text-xs text-bunker-danger">
+                  {couponError}
+                </p>
+              )}
+              {couponMessage && (
+                <p role="status" className="text-xs text-bunker-tan">
+                  {couponMessage}
+                </p>
+              )}
+            </form>
             {totalPrice === null ? (
               <p
                 role="alert"
@@ -198,6 +285,10 @@ function CartPage() {
             ) : (
               <Link
                 to="/checkout"
+                aria-disabled={isPending}
+                onClick={(event) => {
+                  if (isPending) event.preventDefault();
+                }}
                 className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
               >
                 Finalizar pedido
