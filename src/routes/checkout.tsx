@@ -648,7 +648,17 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
         <div className="flex justify-between">
           <dt className="text-bunker-text-secondary">Subtotal</dt>
           <dd>
-            {typeof cart.subtotal === "number" ? formatBRL(cart.subtotal) : "Preço indisponível"}
+            {typeof cart.item_subtotal === "number"
+              ? formatBRL(cart.item_subtotal)
+              : "Preço indisponível"}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-bunker-text-secondary">Desconto nos produtos</dt>
+          <dd>
+            {typeof cart.item_discount_total === "number"
+              ? `−${formatBRL(cart.item_discount_total)}`
+              : "A confirmar"}
           </dd>
         </div>
         <div className="flex justify-between">

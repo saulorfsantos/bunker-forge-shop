@@ -28,6 +28,8 @@ export interface CheckoutCart {
   region_id?: string;
   currency_code?: string;
   subtotal?: number;
+  item_subtotal?: number;
+  item_discount_total?: number;
   shipping_total?: number;
   tax_total?: number;
   total?: number;
@@ -58,7 +60,7 @@ export interface OrderReceipt {
 }
 
 const CART_FIELDS =
-  "id,email,region_id,currency_code,subtotal,shipping_total,tax_total,total,*items,*payment_collection,*payment_collection.payment_sessions";
+  "id,email,region_id,currency_code,subtotal,item_subtotal,item_discount_total,shipping_total,tax_total,total,*items,*payment_collection,*payment_collection.payment_sessions";
 const ORDER_FIELDS = "id,display_id,email,currency_code,total,created_at,status,*items";
 
 export function getActiveCartId(): string | null {
