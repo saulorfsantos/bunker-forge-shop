@@ -17,10 +17,15 @@ export type HeroSlide = {
   figure?: string;
   /** CSS background-position for the photo. */
   position?: string;
+  /**
+   * Finished banner artwork (text included). When set, it replaces the layout above:
+   * desktop 1920×640 (3:1), mobile 1080×1080, the whole banner links to the category.
+   */
+  art?: { desktop: string; mobile?: string; alt: string };
 };
 
-// Provisional banners (mockup) until the final artwork arrives: replace the
-// images and copy here; the carousel itself does not need to change.
+// Provisional banners (mockup) until the final artwork arrives. To use the artwork, put the
+// files in src/assets/banners/ and set `art` on each slide; the carousel does not change.
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: "armas-airsoft",
