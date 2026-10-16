@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mercado Pago local harness</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/runtime-config.js"></script>
+    <script defer src="https://sdk.mercadopago.com/js/v2"></script>
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">LOCAL / DEV ONLY</p>
+        <h1>Mercado Pago Card Brick</h1>
+        <p>
+          Os campos PCI e a tokenização são executados pelo SDK no browser. O proxy local aceita
+          apenas o token e campos não sensíveis.
+        </p>
+      </header>
+
+      <section class="panel" aria-labelledby="payment-title">
+        <h2 id="payment-title">Tokenização local</h2>
+        <div id="cardPaymentBrick_container"></div>
+        <p id="status" role="status" aria-live="polite">Inicializando o Brick…</p>
+      </section>
+
+      <section id="challenge-panel" class="panel" aria-labelledby="challenge-title" hidden>
+        <h2 id="challenge-title">Desafio 3DS</h2>
+        <p>O desafio abaixo usa dados apenas em memória e uma URL HTTPS validada.</p>
+        <iframe
+          id="challenge-frame"
+          name="mp-3ds-challenge"
+          title="Desafio de autenticação 3DS"
+          sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
+        ></iframe>
+      </section>
+
+      <aside>
+        Não use cartão real, backend remoto ou credenciais de produção. Este harness não é uma rota
+        do storefront.
+      </aside>
+    </main>
+  </body>
+</html>

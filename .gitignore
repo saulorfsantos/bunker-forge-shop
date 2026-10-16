@@ -20,6 +20,10 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Local Mercado Pago harness runtime configuration
+tools/mp-local-harness/.env
+tools/mp-local-harness/.env.*
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
