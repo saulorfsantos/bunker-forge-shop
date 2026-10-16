@@ -1,9 +1,13 @@
 import heroBg from "@/assets/hero-bg.jpg";
-import bunkerBg from "@/assets/background-header.jpg";
-import heroOperator from "@/assets/hero-operator.png";
-import mascote from "@/assets/mascote.png";
+import coleteDesktop from "@/assets/banners/colete-modular-desktop.webp";
+import coleteMobile from "@/assets/banners/colete-modular-mobile.webp";
+import shieldDesktop from "@/assets/banners/rossi-shield-desktop.webp";
+import shieldMobile from "@/assets/banners/rossi-shield-mobile.webp";
+import miraDesktop from "@/assets/banners/mira-rossi-558-desktop.webp";
+import miraMobile from "@/assets/banners/mira-rossi-558-mobile.webp";
 
-export type HeroSlide = {
+/** Opening slide drawn by the site: photo background, text and buttons. */
+export type PhotoSlide = {
   id: string;
   eyebrow: string;
   title: string;
@@ -17,15 +21,24 @@ export type HeroSlide = {
   figure?: string;
   /** CSS background-position for the photo. */
   position?: string;
-  /**
-   * Finished banner artwork (text included). When set, it replaces the layout above:
-   * desktop 1920×640 (3:1), mobile 1080×1080, the whole banner links to the category.
-   */
-  art?: { desktop: string; mobile?: string; alt: string };
+  art?: undefined;
 };
 
-// Provisional banners (mockup) until the final artwork arrives. To use the artwork, put the
-// files in src/assets/banners/ and set `art` on each slide; the carousel does not change.
+/**
+ * Finished banner artwork (text included): desktop 1920×640 (3:1), mobile 1080×1080.
+ * The whole banner links to a product or to a category.
+ */
+export type ArtSlide = {
+  id: string;
+  title: string;
+  art: { desktop: string; mobile?: string; alt: string };
+  link: { type: "product"; id: string } | { type: "category"; handle: string };
+};
+
+export type HeroSlide = PhotoSlide | ArtSlide;
+
+// Opening slide + artwork approved by Saulo on 16 Oct 2026. New artwork goes in
+// src/assets/banners/ and becomes another ArtSlide here.
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: "armas-airsoft",
@@ -39,49 +52,33 @@ export const HERO_SLIDES: HeroSlide[] = [
     position: "center right",
   },
   {
-    id: "airguns-carabinas",
-    eyebrow: "Pressão e precisão",
-    title: "Airguns e carabinas",
-    highlight: "carabinas",
-    description: "Carabinas e pistolas de pressão com esferas de aço, para tiro esportivo e caça.",
-    cta: "Ver airguns",
-    categoryHandle: "airguns-carabinas",
-    background: bunkerBg,
-    position: "center",
+    id: "colete-tatico-modular",
+    title: "Colete tático modular",
+    art: {
+      desktop: coleteDesktop,
+      mobile: coleteMobile,
+      alt: "Colete tático modular em quatro cores: verde militar, cáqui, multicam e preto. Conheça a linha.",
+    },
+    link: { type: "category", handle: "coletes-modulares" },
   },
   {
-    id: "loadout",
-    eyebrow: "Monte seu equipamento",
-    title: "Loadout completo do operador",
-    highlight: "Loadout",
-    description: "Coletes modulares, capacetes, máscaras, óculos, luvas, coldres e mochilas.",
-    cta: "Ver loadout",
-    categoryHandle: "loadout",
-    background: bunkerBg,
-    figure: heroOperator,
-    position: "center left",
+    id: "rossi-shield",
+    title: "Rossi Shield lubrificante e protetor",
+    art: {
+      desktop: shieldDesktop,
+      mobile: shieldMobile,
+      alt: "Cuidado que acompanha o jogo. Rossi Shield, lubrificante e protetor. Ver produto.",
+    },
+    link: { type: "product", id: "prod_01M3WFB296PY97KYF7902P2R7W" },
   },
   {
-    id: "magazines",
-    eyebrow: "Rossi · Specna Arms · PTS",
-    title: "Magazines para seu equipamento",
-    highlight: "Magazines",
-    description: "Magazines organizados por marca para encontrar o modelo certo mais rápido.",
-    cta: "Ver magazines",
-    categoryHandle: "magazines",
-    background: heroBg,
-    figure: mascote,
-    position: "center left",
-  },
-  {
-    id: "suprimentos",
-    eyebrow: "Nunca pare no meio do jogo",
-    title: "Suprimentos para a partida",
-    highlight: "Suprimentos",
-    description: "BBs, gás, baterias, carregadores e speedloaders.",
-    cta: "Ver suprimentos",
-    categoryHandle: "suprimentos",
-    background: bunkerBg,
-    position: "center right",
+    id: "mira-rossi-558",
+    title: "Mira holográfica Rossi 558",
+    art: {
+      desktop: miraDesktop,
+      mobile: miraMobile,
+      alt: "Mira holográfica Rossi 558, seu próximo upgrade para o airsoft. Ver produto.",
+    },
+    link: { type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" },
   },
 ];
