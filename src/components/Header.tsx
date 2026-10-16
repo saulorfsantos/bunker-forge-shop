@@ -24,6 +24,7 @@ export function Header() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const { data: results = [], isLoading } = useSearchProducts(debouncedQuery, AUTOCOMPLETE_LIMIT);
 
@@ -132,7 +133,7 @@ export function Header() {
               type="button"
               onClick={() => setOpenMenu((v) => !v)}
               aria-label="Menu"
-              className="md:hidden p-2 text-bunker-text-primary"
+              className="lg:hidden p-2 text-bunker-text-primary"
             >
               {openMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -161,14 +162,14 @@ export function Header() {
       </div>
 
       {/* Category nav */}
-      <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden md:block">
-        <div className="max-w-[1400px] mx-auto px-4 h-12 flex items-center gap-1">
+      <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden lg:block">
+        <div className="max-w-[1400px] mx-auto px-4 h-12 flex items-center justify-between gap-1">
           {categories.map((cat) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
                 to="/category/$slug"
                 params={{ slug: cat.slug }}
-                className="px-3 lg:px-4 py-2 font-display text-sm uppercase tracking-wider text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
+                className="px-2 xl:px-4 py-2 font-display text-xs xl:text-sm uppercase tracking-wider whitespace-nowrap text-bunker-military hover:text-bunker-military-light transition-colors flex items-center gap-1"
               >
                 {cat.name}
                 {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}
@@ -198,22 +199,42 @@ export function Header() {
       {/* Mobile menu */}
       <div
         className={cn(
-          "md:hidden bg-bunker-graphite border-b border-bunker-black overflow-hidden transition-all",
-          openMenu ? "max-h-[600px]" : "max-h-0",
+          "lg:hidden bg-bunker-graphite border-b border-bunker-black transition-all",
+          openMenu ? "max-h-[75vh] overflow-y-auto" : "max-h-0 overflow-hidden",
         )}
       >
         <ul className="px-4 py-2">
           {categories.map((cat) => (
             <li key={cat.slug} className="border-b border-bunker-charcoal last:border-b-0">
-              <Link
-                to="/category/$slug"
-                params={{ slug: cat.slug }}
-                onClick={() => setOpenMenu(false)}
-                className="block py-3 font-display uppercase tracking-wider text-bunker-text-primary hover:text-bunker-tan"
-              >
-                {cat.name}
-              </Link>
-              {cat.subcategories.length > 0 && (
+              <div className="flex items-center justify-between">
+                <Link
+                  to="/category/$slug"
+                  params={{ slug: cat.slug }}
+                  onClick={() => setOpenMenu(false)}
+                  className="flex-1 block py-3 font-display uppercase tracking-wider text-bunker-text-primary hover:text-bunker-tan"
+                >
+                  {cat.name}
+                </Link>
+                {cat.subcategories.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedCategory((current) => (current === cat.slug ? null : cat.slug))
+                    }
+                    aria-expanded={expandedCategory === cat.slug}
+                    aria-label={`Ver itens de ${cat.name}`}
+                    className="p-3 -mr-3 text-bunker-text-secondary hover:text-bunker-tan"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        expandedCategory === cat.slug && "rotate-180",
+                      )}
+                    />
+                  </button>
+                )}
+              </div>
+              {cat.subcategories.length > 0 && expandedCategory === cat.slug && (
                 <ul className="pb-2 pl-4">
                   {cat.subcategories.map((sub) => (
                     <li key={sub.slug}>

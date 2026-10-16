@@ -24,8 +24,21 @@ export type MedusaProduct = {
   description?: string | null;
   images?: Array<{ url?: string | null }>;
   categories?: Array<{ id: string; handle: string; name: string }>;
+  metadata?: Record<string, unknown> | null;
   variants?: MedusaVariant[];
 };
+
+export const FALLBACK_BRAND_LABEL = "Bunker 81";
+
+export function productBrand(product: Pick<MedusaProduct, "metadata">): string {
+  const brand = product.metadata?.brand;
+  return typeof brand === "string" ? brand.trim() : "";
+}
+
+/** Label shown on cards and pages; unbranded products keep the store name. */
+export function displayBrand(product: Pick<Product, "brand">): string {
+  return product.brand || FALLBACK_BRAND_LABEL;
+}
 
 export type CatalogVariant = {
   id: string;
@@ -134,7 +147,9 @@ export function mapMedusaProduct(
     slug: product.handle,
     category: categoryHandle,
     subcategory: "",
-    brand: "Bunker 81",
+    categoryHandles: (product.categories ?? []).map((category) => category.handle),
+    categoryIds: (product.categories ?? []).map((category) => category.id),
+    brand: productBrand(product),
     sku: displayVariant?.sku ?? "",
     defaultVariantId: hasSinglePurchasableVariant ? variants[0].id : undefined,
     images: resolveProductImages(product, placeholderImage, resolveLocalImages),

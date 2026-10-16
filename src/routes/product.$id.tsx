@@ -13,19 +13,11 @@ import {
   useCategories,
   type ProductVariantDetail,
 } from "@/hooks/useMedusaProducts";
-import { MEDUSA_CATEGORY_IDS } from "@/lib/medusa";
-import { resolveSelectedVariant } from "@/lib/catalog";
+import { displayBrand, resolveSelectedVariant } from "@/lib/catalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SafeProductImage } from "@/components/SafeProductImage";
-
-const CATEGORY_HANDLE_TO_ID: Record<string, string> = {
-  airsoft: MEDUSA_CATEGORY_IDS.AIRSOFT,
-  pressao: MEDUSA_CATEGORY_IDS.PRESSAO,
-  acessorios: MEDUSA_CATEGORY_IDS.ACESSORIOS,
-  cutelaria: MEDUSA_CATEGORY_IDS.CUTELARIA,
-};
 
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
@@ -44,8 +36,11 @@ function ProductPage() {
   const navigate = useNavigate();
   const { data: product, isLoading, isError, refetch } = useProduct(id);
   const { data: categories } = useCategories();
-  const categoryId = product ? CATEGORY_HANDLE_TO_ID[product.category] : undefined;
-  const relatedQuery = useProductsByCategory(categoryId ?? "", 9);
+  const relatedCategoryIds = useMemo(
+    () => product?.categoryIds?.slice(0, 1) ?? [],
+    [product?.categoryIds],
+  );
+  const relatedQuery = useProductsByCategory(relatedCategoryIds, 9);
   const { addItem, isPending } = useCart();
 
   const [mainImage, setMainImage] = useState(0);
@@ -223,7 +218,7 @@ function ProductPage() {
           {/* Info */}
           <div className="flex flex-col gap-4">
             <p className="text-xs uppercase tracking-widest text-bunker-text-secondary">
-              {product.brand}
+              {displayBrand(product)}
               {selectedVariant?.sku
                 ? ` · SKU ${selectedVariant.sku}`
                 : product.variants.length > 1

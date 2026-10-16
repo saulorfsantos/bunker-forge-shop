@@ -4,6 +4,11 @@ export interface Product {
   slug: string;
   category: string;
   subcategory: string;
+  /** Handles of every Medusa category the product belongs to. */
+  categoryHandles?: string[];
+  /** Ids of the same categories, in the order Medusa returns them. */
+  categoryIds?: string[];
+  /** Brand from Medusa `metadata.brand`; empty when not registered. */
   brand: string;
   sku: string;
   images: string[];

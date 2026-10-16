@@ -3,7 +3,11 @@ import { BRAZIL_REGION_ID, PRODUCT_LIST_FIELDS, sdk } from "@/lib/medusa";
 import type { Product } from "@/types/product";
 import placeholderImage from "@/assets/logo-shield.png";
 import { resolveLocalProductImages } from "@/lib/product-images";
-import { mapMedusaCategory, type MedusaCategoryNode } from "@/lib/category-hierarchy";
+import {
+  mapMedusaCategory,
+  sortCategoryNodes,
+  type MedusaCategoryNode,
+} from "@/lib/category-hierarchy";
 import {
   mapMedusaProduct,
   mapMedusaVariant,
@@ -13,7 +17,7 @@ import {
 } from "@/lib/catalog";
 
 const PRODUCT_DETAIL_FIELDS =
-  "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,*variants,+variants.inventory_quantity,*options";
+  "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,metadata,*variants,+variants.inventory_quantity,*options";
 
 type MedusaProductDetail = MedusaProduct & {
   options?: Array<{
@@ -62,12 +66,12 @@ export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDet
   };
 }
 
-async function fetchProducts(options: { limit?: number; categoryId?: string }) {
+async function fetchProducts(options: { limit?: number; categoryIds?: string[] }) {
   const { products } = await sdk.store.product.list({
     limit: options.limit ?? 8,
     region_id: BRAZIL_REGION_ID,
     fields: PRODUCT_LIST_FIELDS,
-    ...(options.categoryId ? { category_id: [options.categoryId] } : {}),
+    ...(options.categoryIds?.length ? { category_id: options.categoryIds } : {}),
   });
 
   return (products as MedusaProduct[]).map((product) =>
@@ -99,8 +103,8 @@ async function fetchProduct(id: string) {
 
 export const medusaQueryKeys = {
   products: (limit?: number) => ["medusa", "products", { limit }] as const,
-  productsByCategory: (categoryId: string, limit?: number) =>
-    ["medusa", "products", "category", categoryId, { limit }] as const,
+  productsByCategory: (categoryIds: string[], limit?: number) =>
+    ["medusa", "products", "category", categoryIds, { limit }] as const,
   product: (id: string) => ["medusa", "products", "detail", id] as const,
   search: (q: string) => ["medusa", "products", "search", q] as const,
   categories: () => ["medusa", "categories"] as const,
@@ -113,11 +117,12 @@ export function useProducts(limit = 8) {
   });
 }
 
-export function useProductsByCategory(categoryId: string, limit = 8) {
+/** Pass the category and its descendants so a parent tab lists every sub-item's products. */
+export function useProductsByCategory(categoryIds: string[], limit = 8) {
   return useQuery({
-    queryKey: medusaQueryKeys.productsByCategory(categoryId, limit),
-    queryFn: () => fetchProducts({ limit, categoryId }),
-    enabled: Boolean(categoryId),
+    queryKey: medusaQueryKeys.productsByCategory(categoryIds, limit),
+    queryFn: () => fetchProducts({ limit, categoryIds }),
+    enabled: categoryIds.length > 0,
   });
 }
 
@@ -139,20 +144,30 @@ export function useSearchProducts(q: string, limit = 50) {
   });
 }
 
+async function fetchCategoryTree() {
+  const { product_categories } = await sdk.store.category.list({
+    limit: 50,
+    parent_category_id: null,
+    include_descendants_tree: true,
+    fields: "id,name,handle,rank,*category_children",
+  });
+
+  // Menu order follows the rank set in Medusa, not the alphabet.
+  return sortCategoryNodes(product_categories as MedusaCategoryNode[]);
+}
+
+/** Raw category tree (with ids), shared with useCategories through the same cache entry. */
+export function useCategoryTree() {
+  return useQuery({
+    queryKey: medusaQueryKeys.categories(),
+    queryFn: fetchCategoryTree,
+  });
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: medusaQueryKeys.categories(),
-    queryFn: async () => {
-      const { product_categories } = await sdk.store.category.list({
-        limit: 50,
-        parent_category_id: null,
-        include_descendants_tree: true,
-        fields: "id,name,handle,*category_children",
-      });
-
-      return (product_categories as MedusaCategoryNode[])
-        .map(mapMedusaCategory)
-        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-    },
+    queryFn: fetchCategoryTree,
+    select: (nodes) => nodes.map(mapMedusaCategory),
   });
 }

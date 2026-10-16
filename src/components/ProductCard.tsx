@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SafeProductImage } from "./SafeProductImage";
+import { displayBrand } from "@/lib/catalog";
 
 interface ProductCardProps {
   product: Product;
@@ -70,7 +71,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
       <div className="flex flex-col flex-1 p-3 md:p-4 gap-2">
         <p className="text-[10px] uppercase text-bunker-text-secondary tracking-wider">
-          {product.brand}
+          {displayBrand(product)}
         </p>
         <Link
           to="/product/$id"
