@@ -5,6 +5,7 @@ export type MedusaCategoryNode = {
   name: string;
   handle: string;
   rank?: number | null;
+  parent_category_id?: string | null;
   category_children?: MedusaCategoryNode[];
 };
 

@@ -150,3 +150,24 @@ test("home opens with a five-banner carousel linked to menu categories", () => {
   assert.match(carouselSource, /prefers-reduced-motion: reduce/);
   assert.match(carouselSource, /aria-roledescription="carousel"/);
 });
+
+test("menu keeps only top-level categories even when the SDK drops the parent filter", () => {
+  assert.match(hookSource, /parent_category_id,\*category_children/);
+  assert.match(hookSource, /\.filter\(\(category\) => !category\.parent_category_id\)/);
+});
+
+test("tan is the approved #AB7E4C and menu text stays readable on it", () => {
+  const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(styles, /--bunker-tan: #ab7e4c;/);
+  assert.match(headerSource, /text-bunker-black hover:opacity-70/);
+});
+
+test("carousel shows finished artwork with a mobile version and a link", () => {
+  assert.match(carouselSource, /slide\.art \?/);
+  assert.match(
+    carouselSource,
+    /<source media="\(max-width: 767px\)" srcSet=\{slide\.art\.mobile\}/,
+  );
+  assert.match(carouselSource, /width=\{1920\}\s+height=\{640\}/);
+  assert.match(slidesSource, /desktop 1920×640 \(3:1\), mobile 1080×1080/);
+});

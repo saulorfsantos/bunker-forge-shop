@@ -146,14 +146,17 @@ export function useSearchProducts(q: string, limit = 50) {
 
 async function fetchCategoryTree() {
   const { product_categories } = await sdk.store.category.list({
-    limit: 50,
+    limit: 100,
     parent_category_id: null,
     include_descendants_tree: true,
-    fields: "id,name,handle,rank,*category_children",
+    fields: "id,name,handle,rank,parent_category_id,*category_children",
   });
 
-  // Menu order follows the rank set in Medusa, not the alphabet.
-  return sortCategoryNodes(product_categories as MedusaCategoryNode[]);
+  // The JS SDK drops `parent_category_id: null` from the query string, so Medusa returns
+  // every category; keep only the top level here. Menu order follows the Medusa rank.
+  return sortCategoryNodes(
+    (product_categories as MedusaCategoryNode[]).filter((category) => !category.parent_category_id),
+  );
 }
 
 /** Raw category tree (with ids), shared with useCategories through the same cache entry. */
