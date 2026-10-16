@@ -2,15 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { HeroSlide } from "@/data/hero-slides";
+import type { ArtSlide, HeroSlide, PhotoSlide } from "@/data/hero-slides";
 import { cn } from "@/lib/utils";
 
 export const HERO_AUTOPLAY_MS = 6000;
 
-function SlideTitle({ slide, as: Tag }: { slide: HeroSlide; as: "h1" | "h2" }) {
+function SlideTitle({ slide, as: Tag }: { slide: PhotoSlide; as: "h1" | "h2" }) {
   const parts = slide.highlight ? slide.title.split(slide.highlight) : [slide.title];
   return (
-    <Tag className="font-display uppercase text-bunker-text-primary text-4xl sm:text-6xl lg:text-7xl leading-[0.95] tracking-wider">
+    <Tag className="font-display uppercase text-bunker-text-primary text-4xl sm:text-6xl lg:text-5xl xl:text-6xl leading-[0.95] tracking-wider">
       {parts.length === 2 ? (
         <>
           {parts[0]}
@@ -21,6 +21,46 @@ function SlideTitle({ slide, as: Tag }: { slide: HeroSlide; as: "h1" | "h2" }) {
         slide.title
       )}
     </Tag>
+  );
+}
+
+function ArtBanner({
+  slide,
+  focusable,
+  eager,
+}: {
+  slide: ArtSlide;
+  focusable: boolean;
+  eager: boolean;
+}) {
+  const picture = (
+    <picture>
+      {slide.art.mobile && <source media="(max-width: 1023px)" srcSet={slide.art.mobile} />}
+      <img
+        src={slide.art.desktop}
+        alt={slide.art.alt}
+        width={1920}
+        height={640}
+        className="block w-full aspect-square lg:aspect-[3/1] object-cover"
+        loading={eager ? "eager" : "lazy"}
+      />
+    </picture>
+  );
+  const tabIndex = focusable ? 0 : -1;
+  // The banner's "Ver produto" opens the product; "Conheça a linha" opens the category.
+  return slide.link.type === "product" ? (
+    <Link to="/product/$id" params={{ id: slide.link.id }} tabIndex={tabIndex} className="block">
+      {picture}
+    </Link>
+  ) : (
+    <Link
+      to="/category/$slug"
+      params={{ slug: slide.link.handle }}
+      tabIndex={tabIndex}
+      className="block"
+    >
+      {picture}
+    </Link>
   );
 }
 
@@ -79,31 +119,12 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 aria-hidden={index !== selected}
               >
                 {index === 0 && <h1 className="sr-only">{slide.title}</h1>}
-                <Link
-                  to="/category/$slug"
-                  params={{ slug: slide.categoryHandle }}
-                  tabIndex={index === selected ? 0 : -1}
-                  className="block"
-                >
-                  <picture>
-                    {slide.art.mobile && (
-                      <source media="(max-width: 767px)" srcSet={slide.art.mobile} />
-                    )}
-                    <img
-                      src={slide.art.desktop}
-                      alt={slide.art.alt}
-                      width={1920}
-                      height={640}
-                      className="block w-full h-auto"
-                      loading={index === 0 ? "eager" : "lazy"}
-                    />
-                  </picture>
-                </Link>
+                <ArtBanner slide={slide} focusable={index === selected} eager={index === 0} />
               </div>
             ) : (
               <div
                 key={slide.id}
-                className="relative min-w-0 shrink-0 grow-0 basis-full min-h-[70vh] md:min-h-[80vh] flex items-center"
+                className="relative min-w-0 shrink-0 grow-0 basis-full aspect-square lg:aspect-[3/1] overflow-hidden flex items-center"
                 role="group"
                 aria-roledescription="slide"
                 aria-label={`${index + 1} de ${slides.length}: ${slide.title}`}
@@ -122,19 +143,19 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                     loading={index === 0 ? "eager" : "lazy"}
                   />
                 )}
-                <div className="relative max-w-[1400px] mx-auto px-4 py-20 w-full">
+                <div className="relative max-w-[1400px] mx-auto px-4 sm:px-10 py-8 w-full">
                   <div className="max-w-2xl">
                     <p
-                      className="text-bunker-military-light font-display uppercase tracking-widest text-xl sm:text-3xl md:text-4xl mb-6"
+                      className="text-bunker-military-light font-display uppercase tracking-widest text-base sm:text-2xl lg:text-xl xl:text-2xl mb-3 xl:mb-4"
                       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
                     >
                       {slide.eyebrow}
                     </p>
                     <SlideTitle slide={slide} as={index === 0 ? "h1" : "h2"} />
-                    <p className="mt-5 text-base md:text-lg text-bunker-text-secondary max-w-xl">
+                    <p className="mt-3 xl:mt-4 text-sm sm:text-base xl:text-lg text-bunker-text-secondary max-w-xl">
                       {slide.description}
                     </p>
-                    <div className="mt-7 flex flex-wrap gap-3">
+                    <div className="mt-5 xl:mt-6 flex flex-wrap gap-3">
                       <Link
                         to="/category/$slug"
                         params={{ slug: slide.categoryHandle }}

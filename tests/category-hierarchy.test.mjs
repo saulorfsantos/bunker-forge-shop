@@ -136,17 +136,21 @@ test("mobile menu scrolls and expands one tab at a time", () => {
   assert.match(headerSource, /<nav className="[^"]*hidden lg:block/);
 });
 
-test("home opens with a five-banner carousel linked to menu categories", () => {
+test("home opens with the photo slide plus the three approved artworks", () => {
   assert.match(homeSource, /<HeroCarousel slides=\{HERO_SLIDES\} \/>/);
   assert.doesNotMatch(homeSource, /MEDUSA_CATEGORY_IDS/);
-  const handles = [...slidesSource.matchAll(/categoryHandle: "([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(handles, [
+  const ids = [...slidesSource.matchAll(/^    id: "([^"]+)"/gm)].map((m) => m[1]);
+  assert.deepEqual(ids, [
     "armas-airsoft",
-    "airguns-carabinas",
-    "loadout",
-    "magazines",
-    "suprimentos",
+    "colete-tatico-modular",
+    "rossi-shield",
+    "mira-rossi-558",
   ]);
+  assert.match(slidesSource, /link: \{ type: "category", handle: "coletes-modulares" \}/);
+  assert.match(slidesSource, /link: \{ type: "product", id: "prod_01M3WFB296PY97KYF7902P2R7W" \}/);
+  assert.match(slidesSource, /link: \{ type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" \}/);
+  assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 3);
+  assert.match(carouselSource, /to="\/product\/\$id" params=\{\{ id: slide\.link\.id \}\}/);
   assert.match(carouselSource, /prefers-reduced-motion: reduce/);
   assert.match(carouselSource, /aria-roledescription="carousel"/);
 });
@@ -166,8 +170,10 @@ test("carousel shows finished artwork with a mobile version and a link", () => {
   assert.match(carouselSource, /slide\.art \?/);
   assert.match(
     carouselSource,
-    /<source media="\(max-width: 767px\)" srcSet=\{slide\.art\.mobile\}/,
+    /<source media="\(max-width: 1023px\)" srcSet=\{slide\.art\.mobile\}/,
   );
+  // Same box for photo and artwork slides, so the page does not jump between slides.
+  assert.equal([...carouselSource.matchAll(/aspect-square lg:aspect-\[3\/1\]/g)].length, 2);
   assert.match(carouselSource, /width=\{1920\}\s+height=\{640\}/);
   assert.match(slidesSource, /desktop 1920×640 \(3:1\), mobile 1080×1080/);
 });
