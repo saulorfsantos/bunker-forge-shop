@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  displayBrand,
   mapMedusaProduct,
   mapMedusaVariant,
   resolveProductImages,
@@ -286,4 +287,28 @@ test("cart products preserve the placeholder when no local fallback exists", () 
   );
 
   assert.deepEqual(product.images, ["placeholder.png"]);
+});
+
+test("brand comes from Medusa metadata and unbranded products keep the store label", () => {
+  const branded = mapMedusaProduct(
+    {
+      ...productBase,
+      metadata: { brand: "  Specna Arms " },
+      categories: [
+        { id: "cat_parent", handle: "armas-airsoft", name: "Armas Airsoft" },
+        { id: "cat_child", handle: "sniper-shotgun", name: "Sniper / Shotgun" },
+      ],
+    },
+    "/placeholder.png",
+  );
+  assert.equal(branded.brand, "Specna Arms");
+  assert.equal(displayBrand(branded), "Specna Arms");
+  assert.deepEqual(branded.categoryHandles, ["armas-airsoft", "sniper-shotgun"]);
+  assert.deepEqual(branded.categoryIds, ["cat_parent", "cat_child"]);
+
+  for (const metadata of [undefined, null, {}, { brand: 42 }, { brand: "   " }]) {
+    const product = mapMedusaProduct({ ...productBase, metadata }, "/placeholder.png");
+    assert.equal(product.brand, "");
+    assert.equal(displayBrand(product), "Bunker 81");
+  }
 });

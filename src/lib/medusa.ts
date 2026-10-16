@@ -30,15 +30,8 @@ export const sdk = new Medusa({
 /** Região Brasil (BRL) — necessária para calculated_price nos produtos. */
 export const BRAZIL_REGION_ID = "reg_01KS62SJ6RCSCZFKJYZ12FN96Y";
 
-export const MEDUSA_CATEGORY_IDS = {
-  AIRSOFT: "pcat_01KS4XNZC8VHRNTH47Z8EBA45R",
-  ACESSORIOS: "pcat_01KS4XNZC8KQFD0DQQHG48YGTB",
-  PRESSAO: "pcat_01KS4XNZC82BKQYV0XD2K7MM59",
-  CUTELARIA: "pcat_01KS4XNZC7QE2V16G7AYK0TB9G",
-} as const;
-
 export const PRODUCT_LIST_FIELDS =
-  "*variants.calculated_price,id,title,handle,thumbnail,description,*variants,+variants.inventory_quantity,*categories";
+  "*variants.calculated_price,id,title,handle,thumbnail,description,*variants,+variants.inventory_quantity,*categories,metadata";
 
 /** localStorage key for the Medusa cart id (separate from mock cart items). */
 export const MEDUSA_CART_ID_KEY = "bunker81-medusa-cart-id";

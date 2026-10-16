@@ -1,19 +1,24 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductsByCategory } from "@/hooks/useMedusaProducts";
 import { sdk } from "@/lib/medusa";
+import {
+  collectCategoryIds,
+  LEGACY_CATEGORY_HANDLES,
+  mapMedusaCategory,
+  sortCategoryNodes,
+  type MedusaCategoryNode,
+} from "@/lib/category-hierarchy";
 import type { Category, Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
-type MedusaCategoryByHandle = {
-  id: string;
-  name: string;
-  handle: string;
+type MedusaCategoryByHandle = MedusaCategoryNode & {
+  parent_category?: { name: string; handle: string } | null;
 };
 
 function useCategoryByHandle(slug: string) {
@@ -22,16 +27,26 @@ function useCategoryByHandle(slug: string) {
     queryFn: async () => {
       const { product_categories } = await sdk.store.category.list({
         handle: slug,
-        fields: "id,name,handle",
+        include_descendants_tree: true,
+        fields:
+          "id,name,handle,rank,*category_children,parent_category.name,parent_category.handle",
       });
 
-      return (product_categories[0] as MedusaCategoryByHandle | undefined) ?? null;
+      const category = product_categories[0] as MedusaCategoryByHandle | undefined;
+      if (!category) return null;
+      const [sorted] = sortCategoryNodes([category]);
+      return { ...category, ...sorted };
     },
     enabled: Boolean(slug),
   });
 }
 
 export const Route = createFileRoute("/category/$slug")({
+  beforeLoad: ({ params }) => {
+    const current = LEGACY_CATEGORY_HANDLES[params.slug];
+    if (current)
+      throw redirect({ to: "/category/$slug", params: { slug: current }, replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Categoria — Bunker 81 Airsoft" },
@@ -49,12 +64,18 @@ type SortKey = "relevance" | "price-asc" | "price-desc" | "newest";
 function CategoryPage() {
   const { slug } = Route.useParams();
   const categoryQuery = useCategoryByHandle(slug);
-  const categoryId = categoryQuery.data?.id;
-  const productsQuery = useProductsByCategory(categoryId ?? "", 100);
+  const categoryIds = useMemo(
+    () => (categoryQuery.data ? collectCategoryIds(categoryQuery.data) : []),
+    [categoryQuery.data],
+  );
+  const productsQuery = useProductsByCategory(categoryIds, 100);
   const allProducts = useMemo(() => productsQuery.data ?? [], [productsQuery.data]);
 
   const brands = useMemo(
-    () => Array.from(new Set(allProducts.map((p) => p.brand))).sort(),
+    () =>
+      Array.from(new Set(allProducts.map((p) => p.brand).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b, "pt-BR"),
+      ),
     [allProducts],
   );
   const maxPrice = useMemo(
@@ -73,7 +94,8 @@ function CategoryPage() {
   const filtered = useMemo(() => {
     const effectivePriceMax = priceMax ?? maxPrice;
     let res: Product[] = allProducts.filter((p) => {
-      if (selectedSubs.length && !selectedSubs.includes(p.subcategory)) return false;
+      if (selectedSubs.length && !selectedSubs.some((sub) => p.categoryHandles?.includes(sub)))
+        return false;
       if (selectedBrands.length && !selectedBrands.includes(p.brand)) return false;
       if (p.priceAvailable && (p.currentPrice < priceMin || p.currentPrice > effectivePriceMax))
         return false;
@@ -148,28 +170,26 @@ function CategoryPage() {
     );
   }
 
-  const category: Category = {
-    slug: categoryQuery.data.handle,
-    name: categoryQuery.data.name,
-    icon: "Crosshair",
-    subcategories: [],
-  };
+  const category: Category = mapMedusaCategory(categoryQuery.data);
+  const parentCategory = categoryQuery.data.parent_category ?? null;
 
   const Filters = (
     <div className="space-y-6">
-      <FilterBlock title="Subcategoria">
-        {category.subcategories.map((s) => (
-          <label key={s.slug} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selectedSubs.includes(s.slug)}
-              onChange={() => toggle(selectedSubs, setSelectedSubs, s.slug)}
-              className="accent-bunker-tan"
-            />
-            <span className="text-bunker-text-primary">{s.name}</span>
-          </label>
-        ))}
-      </FilterBlock>
+      {category.subcategories.length > 0 && (
+        <FilterBlock title="Subcategoria">
+          {category.subcategories.map((s) => (
+            <label key={s.slug} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedSubs.includes(s.slug)}
+                onChange={() => toggle(selectedSubs, setSelectedSubs, s.slug)}
+                className="accent-bunker-tan"
+              />
+              <span className="text-bunker-text-primary">{s.name}</span>
+            </label>
+          ))}
+        </FilterBlock>
+      )}
 
       <FilterBlock title="Faixa de Preço">
         <div className="flex items-center gap-2 text-xs">
@@ -193,19 +213,21 @@ function CategoryPage() {
         </div>
       </FilterBlock>
 
-      <FilterBlock title="Marca">
-        {brands.map((b) => (
-          <label key={b} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selectedBrands.includes(b)}
-              onChange={() => toggle(selectedBrands, setSelectedBrands, b)}
-              className="accent-bunker-tan"
-            />
-            <span className="text-bunker-text-primary">{b}</span>
-          </label>
-        ))}
-      </FilterBlock>
+      {brands.length > 0 && (
+        <FilterBlock title="Marca">
+          {brands.map((b) => (
+            <label key={b} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedBrands.includes(b)}
+                onChange={() => toggle(selectedBrands, setSelectedBrands, b)}
+                className="accent-bunker-tan"
+              />
+              <span className="text-bunker-text-primary">{b}</span>
+            </label>
+          ))}
+        </FilterBlock>
+      )}
 
       <FilterBlock title="Disponibilidade">
         <label className="flex items-center gap-2 text-sm py-1 cursor-pointer">
@@ -238,6 +260,18 @@ function CategoryPage() {
             Home
           </Link>
           <ChevronRight className="w-3 h-3" />
+          {parentCategory && (
+            <>
+              <Link
+                to="/category/$slug"
+                params={{ slug: parentCategory.handle }}
+                className="uppercase tracking-wider hover:text-bunker-tan"
+              >
+                {parentCategory.name}
+              </Link>
+              <ChevronRight className="w-3 h-3" />
+            </>
+          )}
           <span className="text-bunker-tan uppercase tracking-wider">{category.name}</span>
         </nav>
 

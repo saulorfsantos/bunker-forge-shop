@@ -1,5 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import { Crosshair, Target, Shield, Swords, Tent, type LucideIcon } from "lucide-react";
+import {
+  Crosshair,
+  Target,
+  Shield,
+  Swords,
+  Tent,
+  Package,
+  Wrench,
+  ScanEye,
+  Layers,
+  type LucideIcon,
+} from "lucide-react";
 import type { Category } from "@/types/product";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -8,6 +19,10 @@ const iconMap: Record<string, LucideIcon> = {
   Shield,
   Swords,
   Tent,
+  Package,
+  Wrench,
+  ScanEye,
+  Layers,
 };
 
 export function CategoryCard({ category }: { category: Category }) {
