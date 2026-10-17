@@ -5,6 +5,12 @@ import shieldDesktop from "@/assets/banners/rossi-shield-desktop.webp";
 import shieldMobile from "@/assets/banners/rossi-shield-mobile.webp";
 import miraDesktop from "@/assets/banners/mira-rossi-558-desktop.webp";
 import miraMobile from "@/assets/banners/mira-rossi-558-mobile.webp";
+import bbsTracerDesktop from "@/assets/banners/bbs-tracer-leao-desktop.webp";
+import bbsTracerMobile from "@/assets/banners/bbs-tracer-leao-mobile.webp";
+import t238Desktop from "@/assets/banners/tracer-t238-griffon-desktop.webp";
+import t238Mobile from "@/assets/banners/tracer-t238-griffon-mobile.webp";
+import wardogDesktop from "@/assets/banners/wardog-loadout-desktop.webp";
+import wardogMobile from "@/assets/banners/wardog-loadout-mobile.webp";
 
 /** Opening slide drawn by the site: photo background, text and buttons. */
 export type PhotoSlide = {
@@ -80,5 +86,37 @@ export const HERO_SLIDES: HeroSlide[] = [
       alt: "Mira holográfica Rossi 558, seu próximo upgrade para o airsoft. Ver produto.",
     },
     link: { type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" },
+  },
+  {
+    id: "bbs-tracer-leao",
+    title: "BBs Tracer Leão",
+    art: {
+      desktop: bbsTracerDesktop,
+      mobile: bbsTracerMobile,
+      alt: "BBs Tracer Leão, 0,28 g e 0,30 g, 1.100 unidades. Ver produto.",
+    },
+    // Not in the catalogue yet: opens the BBs sub-item, which has tracer BBs.
+    link: { type: "category", handle: "bbs" },
+  },
+  {
+    id: "tracer-t238-griffon",
+    title: "Tracer T238 Griffon",
+    art: {
+      desktop: t238Desktop,
+      mobile: t238Mobile,
+      alt: "Tracer T238 Griffon, preto ou prata. Escolha seu estilo. Ver produto.",
+    },
+    link: { type: "product", id: "prod_01M53VZ5DTTQYYYZZR0HRYK1S7" },
+  },
+  {
+    id: "wardog-loadout",
+    title: "Wardog Airsoft",
+    art: {
+      desktop: wardogDesktop,
+      mobile: wardogMobile,
+      alt: "Estilo para o seu loadout. Wardog Airsoft. Ver produto.",
+    },
+    // Not in the catalogue yet: opens Supressores, Porquinho e Flash Hider.
+    link: { type: "category", handle: "supressores-porquinho-flash-hider" },
   },
 ];

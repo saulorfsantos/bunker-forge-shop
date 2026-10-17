@@ -163,13 +163,14 @@ export function Header() {
 
       {/* Category nav */}
       <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden lg:block">
-        <div className="max-w-[1400px] mx-auto px-4 h-12 flex items-center justify-between gap-1">
+        {/* 15% wider and 15% larger type than the page grid (Saulo, 17/10). */}
+        <div className="max-w-[1610px] mx-auto px-4 h-14 flex items-center justify-between gap-1">
           {categories.map((cat) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
                 to="/category/$slug"
                 params={{ slug: cat.slug }}
-                className="px-2 xl:px-4 py-2 font-display text-xs xl:text-sm uppercase tracking-wider whitespace-nowrap text-bunker-black hover:opacity-70 transition-opacity flex items-center gap-1"
+                className="px-2.5 xl:px-[1.15rem] py-2 font-display text-[13.8px] xl:text-[16.1px] uppercase tracking-wider whitespace-nowrap text-bunker-military hover:opacity-70 transition-opacity flex items-center gap-1"
               >
                 {cat.name}
                 {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}

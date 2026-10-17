@@ -136,7 +136,7 @@ test("mobile menu scrolls and expands one tab at a time", () => {
   assert.match(headerSource, /<nav className="[^"]*hidden lg:block/);
 });
 
-test("home opens with the photo slide plus the three approved artworks", () => {
+test("home opens with the photo slide plus the six approved artworks", () => {
   assert.match(homeSource, /<HeroCarousel slides=\{HERO_SLIDES\} \/>/);
   assert.doesNotMatch(homeSource, /MEDUSA_CATEGORY_IDS/);
   const ids = [...slidesSource.matchAll(/^    id: "([^"]+)"/gm)].map((m) => m[1]);
@@ -145,11 +145,14 @@ test("home opens with the photo slide plus the three approved artworks", () => {
     "colete-tatico-modular",
     "rossi-shield",
     "mira-rossi-558",
+    "bbs-tracer-leao",
+    "tracer-t238-griffon",
+    "wardog-loadout",
   ]);
   assert.match(slidesSource, /link: \{ type: "category", handle: "coletes-modulares" \}/);
   assert.match(slidesSource, /link: \{ type: "product", id: "prod_01M3WFB296PY97KYF7902P2R7W" \}/);
   assert.match(slidesSource, /link: \{ type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" \}/);
-  assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 3);
+  assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 6);
   assert.match(carouselSource, /to="\/product\/\$id" params=\{\{ id: slide\.link\.id \}\}/);
   assert.match(carouselSource, /prefers-reduced-motion: reduce/);
   assert.match(carouselSource, /aria-roledescription="carousel"/);
@@ -160,10 +163,14 @@ test("menu keeps only top-level categories even when the SDK drops the parent fi
   assert.match(hookSource, /\.filter\(\(category\) => !category\.parent_category_id\)/);
 });
 
-test("tan is the approved #AB7E4C and menu text stays readable on it", () => {
+test("tan is the approved #AB7E4C and the menu uses military green, 15% larger", () => {
   const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(styles, /--bunker-tan: #ab7e4c;/);
-  assert.match(headerSource, /text-bunker-black hover:opacity-70/);
+  assert.match(
+    headerSource,
+    /text-\[13\.8px\] xl:text-\[16\.1px\] uppercase tracking-wider whitespace-nowrap text-bunker-military/,
+  );
+  assert.match(headerSource, /max-w-\[1610px\]/);
 });
 
 test("carousel shows finished artwork with a mobile version and a link", () => {
