@@ -5,6 +5,8 @@ import shieldDesktop from "@/assets/banners/rossi-shield-desktop.webp";
 import shieldMobile from "@/assets/banners/rossi-shield-mobile.webp";
 import miraDesktop from "@/assets/banners/mira-rossi-558-desktop.webp";
 import miraMobile from "@/assets/banners/mira-rossi-558-mobile.webp";
+import kitTracerDesktop from "@/assets/banners/kit-tracer-desktop.webp";
+import kitTracerMobile from "@/assets/banners/kit-tracer-mobile.webp";
 import bbsTracerDesktop from "@/assets/banners/bbs-tracer-leao-desktop.webp";
 import bbsTracerMobile from "@/assets/banners/bbs-tracer-leao-mobile.webp";
 import t238Desktop from "@/assets/banners/tracer-t238-griffon-desktop.webp";
@@ -86,6 +88,17 @@ export const HERO_SLIDES: HeroSlide[] = [
       alt: "Mira holográfica Rossi 558, seu próximo upgrade para o airsoft. Ver produto.",
     },
     link: { type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" },
+  },
+  // Fifth slide (Saulo, 19/10). "Conheça o kit" opens the Tracer sub-item.
+  {
+    id: "kit-tracer",
+    title: "Kit Tracer",
+    art: {
+      desktop: kitTracerDesktop,
+      mobile: kitTracerMobile,
+      alt: "Kit Tracer: tracers, BBs e acessórios para airsoft. Conheça o kit.",
+    },
+    link: { type: "category", handle: "tracer" },
   },
   {
     id: "bbs-tracer-leao",

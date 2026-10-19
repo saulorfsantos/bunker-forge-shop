@@ -136,7 +136,7 @@ test("mobile menu scrolls and expands one tab at a time", () => {
   assert.match(headerSource, /<nav className="[^"]*hidden lg:block/);
 });
 
-test("home opens with the photo slide plus the six approved artworks", () => {
+test("home opens with the photo slide plus the seven approved artworks", () => {
   assert.match(homeSource, /<HeroCarousel slides=\{HERO_SLIDES\} \/>/);
   assert.doesNotMatch(homeSource, /MEDUSA_CATEGORY_IDS/);
   const ids = [...slidesSource.matchAll(/^    id: "([^"]+)"/gm)].map((m) => m[1]);
@@ -145,6 +145,7 @@ test("home opens with the photo slide plus the six approved artworks", () => {
     "colete-tatico-modular",
     "rossi-shield",
     "mira-rossi-558",
+    "kit-tracer",
     "bbs-tracer-leao",
     "tracer-t238-griffon",
     "wardog-loadout",
@@ -152,13 +153,20 @@ test("home opens with the photo slide plus the six approved artworks", () => {
   assert.match(slidesSource, /link: \{ type: "category", handle: "coletes-modulares" \}/);
   assert.match(slidesSource, /link: \{ type: "product", id: "prod_01M3WFB296PY97KYF7902P2R7W" \}/);
   assert.match(slidesSource, /link: \{ type: "product", id: "prod_01KW4KQ8MFG929EJA1BANDTBYK" \}/);
-  assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 6);
+  assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 7);
+  assert.match(slidesSource, /link: \{ type: "category", handle: "tracer" \}/);
   assert.match(carouselSource, /to="\/product\/\$id" params=\{\{ id: slide\.link\.id \}\}/);
   assert.match(carouselSource, /prefers-reduced-motion: reduce/);
   // Opening banner 2 s, the others 4.5 s.
   assert.match(carouselSource, /HERO_AUTOPLAY_MS = 4500;/);
   assert.match(carouselSource, /HERO_FIRST_SLIDE_MS = 2000;/);
   assert.match(carouselSource, /const delay = selected === 0 \? firstSlideMs : autoplayMs;/);
+  // Phones: a tap or swipe must not stop autoplay for good (19/10).
+  assert.doesNotMatch(carouselSource, /onMouseEnter|onMouseLeave/);
+  assert.match(carouselSource, /event\.pointerType === "mouse"/);
+  assert.match(carouselSource, /event\.target\.matches\(":focus-visible"\)/);
+  assert.match(carouselSource, /emblaApi\.on\("pointerUp", onPointerUp\)/);
+  assert.match(carouselSource, /emblaApi\.scrollNext\(jump\)/);
   assert.match(carouselSource, /aria-roledescription="carousel"/);
 });
 
