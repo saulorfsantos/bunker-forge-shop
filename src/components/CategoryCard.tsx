@@ -31,13 +31,13 @@ export function CategoryCard({ category }: { category: Category }) {
     <Link
       to="/category/$slug"
       params={{ slug: category.slug }}
-      className="group flex flex-col items-center justify-center gap-3 aspect-square bg-bunker-military border border-bunker-military-light rounded-sm p-4 hover:bg-bunker-tan hover:border-bunker-tan-dark transition-all"
+      className="group flex flex-col items-center justify-center gap-3 aspect-square bg-bunker-charcoal border border-bunker-graphite-light rounded-sm p-4 hover:bg-bunker-black hover:border-bunker-gold transition-all"
     >
       <Icon
-        className="w-10 h-10 md:w-14 md:h-14 text-bunker-tan group-hover:text-bunker-military group-hover:scale-110 transition-all"
+        className="w-10 h-10 md:w-14 md:h-14 text-bunker-tan group-hover:text-bunker-gold group-hover:scale-110 transition-all"
         strokeWidth={1.5}
       />
-      <span className="font-display uppercase tracking-wider text-bunker-tan group-hover:text-bunker-military text-sm md:text-lg text-center transition-colors">
+      <span className="font-display uppercase tracking-wider text-bunker-text-primary group-hover:text-bunker-gold text-sm md:text-lg text-center transition-colors">
         {category.name}
       </span>
     </Link>

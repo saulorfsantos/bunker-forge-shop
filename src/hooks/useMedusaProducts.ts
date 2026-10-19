@@ -12,44 +12,36 @@ import {
   mapMedusaProduct,
   mapMedusaVariant,
   resolveProductImages,
+  type CatalogOption,
+  type CatalogVariant,
   type MedusaProduct,
   type MedusaVariant,
 } from "@/lib/catalog";
 
 const PRODUCT_DETAIL_FIELDS =
-  "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,metadata,*variants,+variants.inventory_quantity,*options";
+  "*variants.calculated_price,id,title,handle,description,thumbnail,*images,*categories,metadata,*variants,+variants.inventory_quantity,*options,*options.values,*variants.options,*variants.images";
 
 type MedusaProductDetail = MedusaProduct & {
   options?: Array<{
     id: string;
     title: string;
-    values?: Array<{ id: string; value: string }>;
+    values?: Array<{ id: string; value: string; rank?: number | null }>;
   }>;
   variants?: MedusaVariant[];
 };
 
-export type ProductVariantDetail = {
-  id: string;
-  sku: string;
-  title: string;
-  currentPrice: number;
-  originalPrice: number;
-  priceAvailable: boolean;
-  stock: number | null;
-  isAvailable: boolean;
-  allowBackorder: boolean;
-};
+export type ProductVariantDetail = CatalogVariant;
 
-export type ProductOptionDetail = {
-  id: string;
-  title: string;
-  values: string[];
-};
+export type ProductOptionDetail = CatalogOption;
 
 export type ProductDetail = Product & {
   variants: ProductVariantDetail[];
   options: ProductOptionDetail[];
 };
+
+function byRank(left?: number | null, right?: number | null): number {
+  return (left ?? Number.MAX_SAFE_INTEGER) - (right ?? Number.MAX_SAFE_INTEGER);
+}
 
 export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDetail {
   const base = mapMedusaProduct(product, placeholderImage, resolveLocalProductImages);
@@ -57,11 +49,17 @@ export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDet
   return {
     ...base,
     images: resolveProductImages(product, placeholderImage, resolveLocalProductImages),
-    variants: (product.variants ?? []).map(mapMedusaVariant),
+    // Admin order: variants by variant_rank, option values by rank (unranked last).
+    variants: [...(product.variants ?? [])]
+      .sort((left, right) => byRank(left.variant_rank, right.variant_rank))
+      .map(mapMedusaVariant),
     options: (product.options ?? []).map((option) => ({
       id: option.id,
       title: option.title,
-      values: (option.values ?? []).map((value) => value.value),
+      values: [...(option.values ?? [])]
+        .sort((left, right) => byRank(left.rank, right.rank))
+        .map((value) => value.value)
+        .filter((value): value is string => typeof value === "string"),
     })),
   };
 }

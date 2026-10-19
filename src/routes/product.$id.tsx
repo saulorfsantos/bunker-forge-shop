@@ -13,7 +13,17 @@ import {
   useCategories,
   type ProductVariantDetail,
 } from "@/hooks/useMedusaProducts";
-import { displayBrand, resolveSelectedVariant } from "@/lib/catalog";
+import {
+  buildOptionSelectors,
+  canSelectByOptions,
+  displayBrand,
+  findVariantForSelection,
+  galleryForSelection,
+  initialOptionSelection,
+  resolveSelectedVariant,
+  selectOptionValue,
+  type OptionSelection,
+} from "@/lib/catalog";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -47,11 +57,13 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<Tab>("desc");
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [chosenOptions, setChosenOptions] = useState<OptionSelection>({});
 
   useEffect(() => {
     setMainImage(0);
     setQty(1);
     setSelectedVariantId(null);
+    setChosenOptions({});
   }, [id]);
 
   const category = useMemo(
@@ -68,15 +80,15 @@ function ProductPage() {
     return (
       <Layout>
         <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
-          <Skeleton className="h-4 w-64 mb-6 bg-bunker-graphite/60" />
-          <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-8 lg:gap-10">
-            <Skeleton className="aspect-square w-full bg-bunker-graphite/60" />
+          <Skeleton className="h-4 w-64 mb-6 bg-bunker-graphite-light/60" />
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] gap-8 lg:gap-10">
+            <Skeleton className="aspect-square w-full bg-bunker-graphite-light/60" />
             <div className="flex flex-col gap-4">
-              <Skeleton className="h-3 w-32 bg-bunker-graphite/60" />
-              <Skeleton className="h-10 w-full bg-bunker-graphite/60" />
-              <Skeleton className="h-24 w-full bg-bunker-graphite/60" />
-              <Skeleton className="h-10 w-40 bg-bunker-graphite/60" />
-              <Skeleton className="h-12 w-full bg-bunker-graphite/60" />
+              <Skeleton className="h-3 w-32 bg-bunker-graphite-light/60" />
+              <Skeleton className="h-10 w-full bg-bunker-graphite-light/60" />
+              <Skeleton className="h-24 w-full bg-bunker-graphite-light/60" />
+              <Skeleton className="h-10 w-40 bg-bunker-graphite-light/60" />
+              <Skeleton className="h-12 w-full bg-bunker-graphite-light/60" />
             </div>
           </div>
         </div>
@@ -110,7 +122,30 @@ function ProductPage() {
     throw notFound();
   }
 
-  const selectedVariant = resolveSelectedVariant(product.variants, selectedVariantId);
+  // Products whose variants are set up with options ("Cor", "Tamanho") get one
+  // picker per option; anything else keeps the plain list of variants.
+  const selectByOptions = canSelectByOptions(product.options, product.variants);
+  const optionSelection: OptionSelection = selectByOptions
+    ? {
+        ...initialOptionSelection(
+          buildOptionSelectors(product.options, product.variants, chosenOptions),
+        ),
+        ...chosenOptions,
+      }
+    : {};
+  const optionSelectors = selectByOptions
+    ? buildOptionSelectors(product.options, product.variants, optionSelection)
+    : [];
+  const selectedVariant = selectByOptions
+    ? findVariantForSelection(product.options, product.variants, optionSelection)
+    : resolveSelectedVariant(product.variants, selectedVariantId);
+  const gallery = galleryForSelection(
+    product.images,
+    product.variants,
+    selectedVariant,
+    optionSelection,
+  );
+  const shownImage = Math.min(mainImage, gallery.length - 1);
   const displayedPrice = selectedVariant?.currentPrice ?? product.currentPrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? product.price1;
   const priceAvailable = selectedVariant?.priceAvailable ?? product.priceAvailable;
@@ -128,7 +163,7 @@ function ProductPage() {
 
   const handleAddToCart = async (goToCart: boolean) => {
     if (!selectedVariant) {
-      toast.error("Selecione uma variante antes de continuar.");
+      toast.error("Escolha as opções antes de continuar.");
       return;
     }
 
@@ -170,37 +205,43 @@ function ProductPage() {
           <span className="text-bunker-tan line-clamp-1">{product.name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] gap-8 lg:gap-10">
           {/* Gallery */}
           <div className="flex flex-col-reverse md:flex-row gap-3">
             <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
-              {product.images.map((src, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setMainImage(i)}
-                  className={cn(
-                    "shrink-0 w-16 h-16 md:w-20 md:h-20 bg-bunker-black border rounded-sm overflow-hidden transition-colors",
-                    i === mainImage
-                      ? "border-bunker-tan"
-                      : "border-bunker-graphite hover:border-bunker-tan-dark",
-                  )}
-                  aria-label={`Imagem ${i + 1}`}
-                >
-                  <SafeProductImage
-                    src={src}
-                    alt=""
-                    loading="lazy"
-                    className="w-full h-full object-contain p-1"
-                  />
-                </button>
-              ))}
+              {gallery.length > 1 &&
+                gallery.map((src, i) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setMainImage(i)}
+                    aria-pressed={i === shownImage}
+                    className={cn(
+                      "product-stage shrink-0 w-16 h-16 md:w-20 md:h-20 border-2 rounded-sm overflow-hidden transition-colors",
+                      i === shownImage
+                        ? "border-bunker-tan"
+                        : "border-bunker-graphite-light hover:border-bunker-gold",
+                    )}
+                    aria-label={`Foto ${i + 1} de ${gallery.length}`}
+                  >
+                    <SafeProductImage
+                      src={src}
+                      alt=""
+                      loading="lazy"
+                      className="product-stage-image p-1"
+                    />
+                  </button>
+                ))}
             </div>
-            <div className="relative flex-1 aspect-square bg-bunker-charcoal border border-bunker-graphite rounded-sm overflow-hidden">
+            <div className="product-stage relative flex-1 aspect-square border border-bunker-graphite-light rounded-sm overflow-hidden">
               <SafeProductImage
-                src={product.images[mainImage]}
-                alt={product.name}
-                className="w-full h-full object-contain p-4 md:p-6"
+                src={gallery[shownImage]}
+                alt={
+                  selectedVariant && product.variants.length > 1
+                    ? `${product.name} — ${getVariantLabel(selectedVariant, 0)}`
+                    : product.name
+                }
+                className="product-stage-image p-4 md:p-6"
               />
               <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                 {discountPercent >= 10 && (
@@ -222,16 +263,68 @@ function ProductPage() {
               {selectedVariant?.sku
                 ? ` · SKU ${selectedVariant.sku}`
                 : product.variants.length > 1
-                  ? " · Selecione uma variante para consultar o SKU"
+                  ? " · Escolha as opções para consultar o SKU"
                   : " · SKU não informado"}
             </p>
             <h1 className="font-display text-3xl md:text-4xl uppercase tracking-wider leading-tight">
               {product.name}
             </h1>
-            {product.variants.length > 1 && (
+            {optionSelectors.map((selector) =>
+              selector.values.length < 2 ? null : (
+                <fieldset
+                  key={selector.id}
+                  className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-4"
+                >
+                  <legend className="px-1 text-xs uppercase font-bold tracking-wider text-bunker-text-primary">
+                    {selector.title}
+                    {optionSelection[selector.id] && (
+                      <span className="ml-2 normal-case font-semibold tracking-normal text-bunker-gold">
+                        {optionSelection[selector.id]}
+                      </span>
+                    )}
+                  </legend>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selector.values.map(({ value, purchasable }) => {
+                      const active = optionSelection[selector.id] === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={active}
+                          aria-label={purchasable ? value : `${value} (indisponível)`}
+                          onClick={() => {
+                            setChosenOptions(
+                              selectOptionValue(
+                                product.variants,
+                                optionSelection,
+                                selector.id,
+                                value,
+                              ),
+                            );
+                            setMainImage(0);
+                            setQty(1);
+                          }}
+                          className={cn(
+                            "min-w-[3rem] rounded-sm border-2 px-3 py-2 text-sm font-semibold transition-colors",
+                            active
+                              ? "border-bunker-tan bg-bunker-tan text-bunker-black"
+                              : "border-bunker-graphite-light text-bunker-text-primary hover:border-bunker-gold hover:text-bunker-gold",
+                            !purchasable && "opacity-60 line-through decoration-1",
+                          )}
+                        >
+                          {value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ),
+            )}
+
+            {!selectByOptions && product.variants.length > 1 && (
               <fieldset className="bg-bunker-charcoal border border-bunker-graphite rounded-sm p-4">
                 <legend className="px-1 text-xs uppercase font-bold tracking-wider text-bunker-text-primary">
-                  Escolha a variante
+                  Escolha as opções
                 </legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                   {product.variants.map((variant, index) => (
@@ -241,13 +334,14 @@ function ProductPage() {
                       aria-pressed={selectedVariantId === variant.id}
                       onClick={() => {
                         setSelectedVariantId(variant.id);
+                        setMainImage(0);
                         setQty(1);
                       }}
                       className={cn(
                         "rounded-sm border px-3 py-2.5 text-left transition-colors",
                         selectedVariantId === variant.id
                           ? "border-bunker-tan bg-bunker-tan/10"
-                          : "border-bunker-graphite hover:border-bunker-tan-dark",
+                          : "border-bunker-graphite-light hover:border-bunker-gold",
                         (!variant.isAvailable || !variant.priceAvailable) && "opacity-60",
                       )}
                     >
@@ -283,12 +377,12 @@ function ProductPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center border border-bunker-graphite rounded-sm">
+              <div className="flex items-center border border-bunker-graphite-light rounded-sm">
                 <button
                   type="button"
                   disabled={!canPurchase}
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite-light disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Diminuir"
                 >
                   <Minus className="w-4 h-4" />
@@ -298,7 +392,7 @@ function ProductPage() {
                   type="button"
                   disabled={!canPurchase || (maxQuantity !== undefined && qty >= maxQuantity)}
                   onClick={() => setQty((q) => q + 1)}
-                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 text-bunker-tan hover:bg-bunker-graphite-light disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Aumentar"
                 >
                   <Plus className="w-4 h-4" />
@@ -312,10 +406,10 @@ function ProductPage() {
                 type="button"
                 disabled={isPending || !canPurchase}
                 onClick={() => void handleAddToCart(false)}
-                className="flex-1 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm py-3.5 rounded-sm hover:bg-bunker-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {!selectedVariant && product.variants.length > 1
-                  ? "Selecione uma variante"
+                  ? "Escolha as opções"
                   : !selectedVariant?.isAvailable
                     ? "Indisponível"
                     : !selectedVariant.priceAvailable
@@ -400,7 +494,7 @@ function getAvailabilityLabel(
 ): string {
   if (!variant) {
     return requiresSelection
-      ? "Selecione uma variante para consultar a disponibilidade"
+      ? "Escolha as opções para consultar a disponibilidade"
       : "Indisponível";
   }
   if (!variant.isAvailable) return "Indisponível";

@@ -14,19 +14,19 @@ export function PriceTag({ price, originalPrice, size = "md", prefix, className 
 
   const priceClass = {
     sm: "text-base",
-    md: "text-xl",
+    md: "text-[1.375rem]",
     lg: "text-3xl md:text-4xl",
   }[size];
 
   return (
     <div className={cn("flex flex-col", className)}>
       {prefix && (
-        <span className="text-bunker-text-secondary text-[11px] uppercase tracking-wider mb-1">
+        <span className="text-bunker-text-secondary text-xs uppercase tracking-wider mb-1">
           {prefix}
         </span>
       )}
       {showOriginal && (
-        <span className="text-bunker-text-secondary text-xs line-through tabular-nums">
+        <span className="text-bunker-text-secondary text-[13px] line-through tabular-nums">
           {formatBRL(originalPrice!)}
         </span>
       )}

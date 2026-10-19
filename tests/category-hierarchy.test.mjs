@@ -163,14 +163,34 @@ test("menu keeps only top-level categories even when the SDK drops the parent fi
   assert.match(hookSource, /\.filter\(\(category\) => !category\.parent_category_id\)/);
 });
 
-test("tan is the approved #AB7E4C and the menu uses military green, 15% larger", () => {
+test("palette is Adriano's five colours and the menu is tan/carvão, 20% larger", () => {
   const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
-  assert.match(styles, /--bunker-tan: #ab7e4c;/);
+  for (const token of [
+    "--palette-carvao: #111111;",
+    "--palette-tan: #b98a50;",
+    "--palette-offwhite: #f2e9da;",
+    "--palette-grafite: #2a2a2a;",
+    "--palette-dourado: #d0a05a;",
+    "--bunker-menu-bg: var(--palette-tan);",
+    "--bunker-menu-text: var(--palette-carvao);",
+    "--bunker-menu-hover-bg: var(--palette-carvao);",
+    "--bunker-menu-hover-text: var(--palette-dourado);",
+  ]) {
+    assert.ok(styles.includes(token), token);
+  }
+  // 13.8px / 16.1px (17/10) + 20%.
+  assert.match(headerSource, /text-\[16\.56px\] xl:text-\[19\.32px\]/);
+  assert.match(headerSource, /<nav className="bg-bunker-menu /);
   assert.match(
     headerSource,
-    /text-\[13\.8px\] xl:text-\[16\.1px\] uppercase tracking-wider whitespace-nowrap text-bunker-military/,
+    /text-bunker-menu-text hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text/,
   );
   assert.match(headerSource, /max-w-\[1610px\]/);
+  // Components use tokens, never raw hex values.
+  for (const path of ["../src/components/Header.tsx", "../src/components/ProductCard.tsx"]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /#[0-9a-f]{6}\b/i, path);
+  }
 });
 
 test("carousel shows finished artwork with a mobile version and a link", () => {

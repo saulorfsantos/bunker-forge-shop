@@ -64,7 +64,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full">
       {/* Main bar */}
-      <div className="bg-bunker-charcoal border-b border-bunker-graphite">
+      <div className="bg-bunker-black border-b border-bunker-graphite">
         <div className="max-w-[1400px] mx-auto px-4 h-32 flex items-center gap-4">
           <Link to="/" className="shrink-0 flex items-center gap-3">
             <img src={logoShield} alt="Bunker 81 Airsoft" className="h-24 w-auto" />
@@ -92,7 +92,7 @@ export function Header() {
             containerClassName="flex-1 max-w-2xl mx-auto hidden md:block"
             formClassName="flex w-full"
             inputClassName="flex-1 bg-bunker-black border border-bunker-graphite rounded-l-sm px-4 py-2.5 text-sm text-bunker-text-primary placeholder:text-bunker-text-secondary focus:outline-none focus:border-bunker-tan"
-            buttonClassName="bg-bunker-tan text-bunker-black px-5 rounded-r-sm hover:bg-bunker-tan-dark transition-colors"
+            buttonClassName="bg-bunker-tan text-bunker-black px-5 rounded-r-sm hover:bg-bunker-gold transition-colors"
             placeholder="Busque por rifles, coletes, lanternas..."
             iconClassName="w-5 h-5"
           />
@@ -162,28 +162,34 @@ export function Header() {
       </div>
 
       {/* Category nav */}
-      <nav className="bg-bunker-tan border-b border-bunker-tan-dark hidden lg:block">
-        {/* 15% wider and 15% larger type than the page grid (Saulo, 17/10). */}
-        <div className="max-w-[1610px] mx-auto px-4 h-14 flex items-center justify-between gap-1">
-          {categories.map((cat) => (
+      <nav className="bg-bunker-menu border-b border-bunker-tan-dark hidden lg:block">
+        {/* 15% wider than the page grid (Saulo, 17/10); type 20% larger (Adriano, 19/10). */}
+        <div className="max-w-[1610px] mx-auto px-2 xl:px-4 h-14 flex items-stretch justify-between">
+          {categories.map((cat, index) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
                 to="/category/$slug"
                 params={{ slug: cat.slug }}
-                className="px-2.5 xl:px-[1.15rem] py-2 font-display text-[13.8px] xl:text-[16.1px] uppercase tracking-wider whitespace-nowrap text-bunker-military hover:opacity-70 transition-opacity flex items-center gap-1"
+                className="h-full px-2 xl:px-[1.15rem] font-display text-[16.56px] xl:text-[19.32px] uppercase tracking-wide xl:tracking-wider whitespace-nowrap text-bunker-menu-text hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text group-hover:bg-bunker-menu-hover group-hover:text-bunker-menu-hover-text focus-visible:bg-bunker-menu-hover focus-visible:text-bunker-menu-hover-text transition-colors flex items-center gap-1"
               >
                 {cat.name}
                 {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}
               </Link>
               {cat.subcategories.length > 0 && (
-                <div className="absolute top-full left-0 min-w-[220px] bg-bunker-charcoal border border-bunker-graphite rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div
+                  className={cn(
+                    // Tabs on the right half open leftwards so the dropdown never leaves the page.
+                    "absolute top-full min-w-[240px] bg-bunker-charcoal border border-bunker-graphite-light rounded-sm shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50",
+                    index >= categories.length / 2 ? "right-0" : "left-0",
+                  )}
+                >
                   <ul className="py-2">
                     {cat.subcategories.map((sub) => (
                       <li key={sub.slug}>
                         <Link
                           to="/category/$slug"
                           params={{ slug: sub.slug }}
-                          className="block px-4 py-2 text-sm text-bunker-text-primary hover:bg-bunker-graphite hover:text-bunker-tan transition-colors"
+                          className="block px-4 py-2 text-[16.8px] text-bunker-text-primary hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text transition-colors"
                         >
                           {sub.name}
                         </Link>
@@ -200,19 +206,19 @@ export function Header() {
       {/* Mobile menu */}
       <div
         className={cn(
-          "lg:hidden bg-bunker-graphite border-b border-bunker-black transition-all",
+          "lg:hidden bg-bunker-menu border-b border-bunker-tan-dark transition-all",
           openMenu ? "max-h-[75vh] overflow-y-auto" : "max-h-0 overflow-hidden",
         )}
       >
         <ul className="px-4 py-2">
           {categories.map((cat) => (
-            <li key={cat.slug} className="border-b border-bunker-charcoal last:border-b-0">
+            <li key={cat.slug} className="border-b border-bunker-tan-dark last:border-b-0">
               <div className="flex items-center justify-between">
                 <Link
                   to="/category/$slug"
                   params={{ slug: cat.slug }}
                   onClick={() => setOpenMenu(false)}
-                  className="flex-1 block py-3 font-display uppercase tracking-wider text-bunker-text-primary hover:text-bunker-tan"
+                  className="flex-1 block py-3 px-2 -mx-2 font-display text-[1.2rem] uppercase tracking-wider text-bunker-menu-text hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text transition-colors"
                 >
                   {cat.name}
                 </Link>
@@ -224,7 +230,7 @@ export function Header() {
                     }
                     aria-expanded={expandedCategory === cat.slug}
                     aria-label={`Ver itens de ${cat.name}`}
-                    className="p-3 -mr-3 text-bunker-text-secondary hover:text-bunker-tan"
+                    className="p-3 -mr-3 text-bunker-menu-text hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text transition-colors"
                   >
                     <ChevronDown
                       className={cn(
@@ -243,7 +249,7 @@ export function Header() {
                         to="/category/$slug"
                         params={{ slug: sub.slug }}
                         onClick={() => setOpenMenu(false)}
-                        className="block py-2 text-sm text-bunker-text-secondary hover:text-bunker-tan"
+                        className="block py-2 px-2 -mx-2 text-[1.05rem] text-bunker-menu-text hover:bg-bunker-menu-hover hover:text-bunker-menu-hover-text transition-colors"
                       >
                         {sub.name}
                       </Link>
@@ -347,13 +353,13 @@ function SearchFormWithSuggestions({
                     to="/product/$id"
                     params={{ id: product.id }}
                     onClick={onCloseDropdown}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite transition-colors"
+                    className="flex w-full items-center gap-3 px-3 py-2.5 hover:bg-bunker-graphite-light transition-colors"
                   >
                     <SafeProductImage
                       src={product.images[0]}
                       alt=""
                       draggable={false}
-                      className="w-10 h-10 shrink-0 rounded-sm object-contain p-1 bg-bunker-black border border-bunker-graphite pointer-events-none"
+                      className="product-stage w-10 h-10 shrink-0 rounded-sm object-contain p-1 border border-bunker-graphite-light pointer-events-none"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-bunker-text-primary line-clamp-1">

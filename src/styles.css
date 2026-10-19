@@ -39,6 +39,13 @@
   --color-bunker-graphite: var(--bunker-graphite);
   --color-bunker-tan: var(--bunker-tan);
   --color-bunker-tan-dark: var(--bunker-tan-dark);
+  --color-bunker-gold: var(--bunker-gold);
+  --color-bunker-graphite-light: var(--bunker-graphite-light);
+  --color-bunker-menu: var(--bunker-menu-bg);
+  --color-bunker-menu-text: var(--bunker-menu-text);
+  --color-bunker-menu-hover: var(--bunker-menu-hover-bg);
+  --color-bunker-menu-hover-text: var(--bunker-menu-hover-text);
+  --color-bunker-product-stage: var(--bunker-product-stage);
   --color-bunker-military: var(--bunker-military);
   --color-bunker-military-light: var(--bunker-military-light);
   --color-bunker-danger: var(--bunker-danger);
@@ -49,17 +56,39 @@
 :root {
   --radius: 0.25rem;
 
+  /* Bunker 81 palette (Adriano, 19/10). Every colour in the store derives from
+     these five values — change them here, never in components. */
+  --palette-carvao: #111111; /* fundo principal, cabeçalho, áreas premium */
+  --palette-tan: #b98a50; /* menus, botões, destaques */
+  --palette-offwhite: #f2e9da; /* texto claro sobre fundo escuro */
+  --palette-grafite: #2a2a2a; /* cards, áreas secundárias, divisórias */
+  --palette-dourado: #d0a05a; /* detalhes, hover, chamadas de destaque */
+
   /* Bunker tokens */
-  --bunker-black: oklch(0.12 0 0);
-  --bunker-charcoal: oklch(0.18 0 0);
-  --bunker-graphite: oklch(0.25 0 0);
-  --bunker-tan: #ab7e4c;
-  --bunker-tan-dark: #8e6539;
+  --bunker-black: var(--palette-carvao);
+  --bunker-charcoal: var(--palette-grafite);
+  --bunker-graphite: var(--palette-grafite);
+  /* Grafite lifted towards off-white: dividers and hovers drawn on top of a card. */
+  --bunker-graphite-light: color-mix(in srgb, var(--palette-grafite) 80%, var(--palette-offwhite));
+  --bunker-tan: var(--palette-tan);
+  --bunker-tan-dark: color-mix(in srgb, var(--palette-tan) 75%, var(--palette-carvao));
+  --bunker-gold: var(--palette-dourado);
   --bunker-military: oklch(0.45 0.07 115);
   --bunker-military-light: oklch(0.55 0.08 115);
   --bunker-danger: oklch(0.48 0.16 25);
-  --bunker-text-primary: oklch(0.96 0.005 95);
-  --bunker-text-secondary: oklch(0.68 0.005 95);
+  --bunker-text-primary: var(--palette-offwhite);
+  --bunker-text-secondary: color-mix(in srgb, var(--palette-offwhite) 68%, var(--palette-carvao));
+
+  /* Navigation menu */
+  --bunker-menu-bg: var(--palette-tan);
+  --bunker-menu-text: var(--palette-carvao);
+  --bunker-menu-hover-bg: var(--palette-carvao);
+  --bunker-menu-hover-text: var(--palette-dourado);
+
+  /* Neutral stage behind every product photo (cards, gallery, thumbnails). The
+     supplier photos have white backgrounds, so a white stage hides their edges and
+     every photo reads as the same square, framed by the dark card. */
+  --bunker-product-stage: #ffffff;
 
   /* Map shadcn semantic tokens onto bunker palette */
   --background: var(--bunker-black);
@@ -74,8 +103,8 @@
   --secondary-foreground: var(--bunker-text-primary);
   --muted: var(--bunker-graphite);
   --muted-foreground: var(--bunker-text-secondary);
-  --accent: var(--bunker-military);
-  --accent-foreground: var(--bunker-text-primary);
+  --accent: var(--bunker-gold);
+  --accent-foreground: var(--bunker-black);
   --destructive: var(--bunker-danger);
   --destructive-foreground: var(--bunker-text-primary);
   --border: var(--bunker-graphite);
@@ -92,7 +121,7 @@
   --sidebar-ring: var(--bunker-tan);
 
   --chart-1: var(--bunker-tan);
-  --chart-2: var(--bunker-military);
+  --chart-2: var(--bunker-gold);
   --chart-3: var(--bunker-military-light);
   --chart-4: var(--bunker-tan-dark);
   --chart-5: var(--bunker-danger);
@@ -112,8 +141,8 @@
   --secondary-foreground: var(--bunker-text-primary);
   --muted: var(--bunker-graphite);
   --muted-foreground: var(--bunker-text-secondary);
-  --accent: var(--bunker-military);
-  --accent-foreground: var(--bunker-text-primary);
+  --accent: var(--bunker-gold);
+  --accent-foreground: var(--bunker-black);
   --destructive: var(--bunker-danger);
   --destructive-foreground: var(--bunker-text-primary);
   --border: var(--bunker-graphite);
@@ -147,6 +176,20 @@
   .price-tag {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
-    color: var(--color-bunker-tan);
+    color: var(--color-bunker-gold);
+  }
+
+  /* Product photo inside its stage: whole product visible, centred, never cropped
+     or stretched. Multiply melts near-white photo backgrounds into the stage. */
+  .product-stage {
+    background-color: var(--color-bunker-product-stage);
+  }
+
+  .product-stage-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    mix-blend-mode: multiply;
   }
 }
