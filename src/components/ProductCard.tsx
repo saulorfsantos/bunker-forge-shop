@@ -26,20 +26,20 @@ export function ProductCard({ product, className }: ProductCardProps) {
   return (
     <article
       className={cn(
-        "group relative flex flex-col bg-bunker-charcoal border border-bunker-graphite rounded-sm overflow-hidden transition-all hover:border-bunker-tan hover:-translate-y-0.5 hover:shadow-lg hover:shadow-bunker-black/50",
+        "group relative flex flex-col bg-bunker-charcoal border border-bunker-graphite-light rounded-sm overflow-hidden transition-all hover:border-bunker-tan hover:-translate-y-0.5 hover:shadow-lg hover:shadow-bunker-black/50",
         className,
       )}
     >
       <Link
         to="/product/$id"
         params={{ id: product.id }}
-        className="relative aspect-square bg-bunker-black overflow-hidden block"
+        className="product-stage relative aspect-square overflow-hidden block"
       >
         <SafeProductImage
           src={product.images[0]}
           alt={product.name}
           loading="lazy"
-          className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105 opacity-90"
+          className="product-stage-image p-4 transition-transform duration-500 group-hover:scale-105"
         />
 
         <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -70,13 +70,13 @@ export function ProductCard({ product, className }: ProductCardProps) {
       </button>
 
       <div className="flex flex-col flex-1 p-3 md:p-4 gap-2">
-        <p className="text-[10px] uppercase text-bunker-text-secondary tracking-wider">
+        <p className="text-xs font-semibold uppercase text-bunker-tan tracking-wider truncate">
           {displayBrand(product)}
         </p>
         <Link
           to="/product/$id"
           params={{ id: product.id }}
-          className="text-bunker-text-primary text-sm font-semibold leading-tight line-clamp-2 min-h-[2.5rem] hover:text-bunker-tan transition-colors"
+          className="text-bunker-text-primary text-[15px] md:text-base font-semibold leading-snug line-clamp-2 min-h-[2.75em] hover:text-bunker-gold transition-colors"
         >
           {product.name}
         </Link>
@@ -98,9 +98,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <Link
             to="/product/$id"
             params={{ id: product.id }}
-            className="mt-2 w-full text-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+            className="mt-2 w-full text-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-gold transition-colors"
           >
-            Escolher variante
+            Escolher opções
           </Link>
         ) : (
           <button
@@ -113,7 +113,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 () => undefined,
               );
             }}
-            className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-tan-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-2 w-full bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-xs py-2.5 rounded-sm hover:bg-bunker-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {!product.priceAvailable
               ? "Preço indisponível"

@@ -14,6 +14,12 @@ export type MedusaVariant = {
   allow_backorder?: boolean | null;
   inventory_quantity?: number | null;
   calculated_price?: MedusaCalculatedPrice | null;
+  thumbnail?: string | null;
+  variant_rank?: number | null;
+  /** Requested on the product page only (`*variants.images`). */
+  images?: Array<{ url?: string | null }> | null;
+  /** Requested on the product page only (`*variants.options`). */
+  options?: Array<{ value?: string | null; option_id?: string | null }> | null;
 };
 
 export type MedusaProduct = {
@@ -50,7 +56,18 @@ export type CatalogVariant = {
   stock: number | null;
   isAvailable: boolean;
   allowBackorder: boolean;
+  /** Photos attached to this variant in Medusa (e.g. one colour: front, back...). */
+  images: string[];
+  /** Option id → chosen value, e.g. { opt_cor: "Preto" }. */
+  optionValues: Record<string, string>;
 };
+
+function imageUrls(images: Array<{ url?: string | null }> | null | undefined): string[] {
+  const urls = (images ?? [])
+    .map((image) => image.url?.trim())
+    .filter((url): url is string => Boolean(url));
+  return [...new Set(urls)];
+}
 
 export function mapMedusaVariant(variant: MedusaVariant): CatalogVariant {
   const managesInventory = variant.manage_inventory !== false;
@@ -76,6 +93,18 @@ export function mapMedusaVariant(variant: MedusaVariant): CatalogVariant {
     stock,
     isAvailable,
     allowBackorder,
+    images: (() => {
+      const urls = imageUrls(variant.images);
+      const thumbnail = variant.thumbnail?.trim();
+      if (!thumbnail) return urls;
+      // The variant thumbnail is that colour's own photo: always show it first.
+      return [thumbnail, ...urls.filter((url) => url !== thumbnail)];
+    })(),
+    optionValues: Object.fromEntries(
+      (variant.options ?? [])
+        .filter((option) => option.option_id && typeof option.value === "string")
+        .map((option) => [option.option_id as string, option.value as string]),
+    ),
   };
 }
 
@@ -86,6 +115,149 @@ export function resolveSelectedVariant<T extends { id: string }>(
   if (variants.length === 1) return variants[0];
   if (!selectedVariantId) return undefined;
   return variants.find((variant) => variant.id === selectedVariantId);
+}
+
+export type CatalogOption = {
+  id: string;
+  title: string;
+  values: string[];
+};
+
+export type OptionSelection = Record<string, string>;
+
+export type OptionValueState = {
+  value: string;
+  /** Some variant with this value (and the other chosen values) can be bought now. */
+  purchasable: boolean;
+};
+
+export type OptionSelector = {
+  id: string;
+  title: string;
+  values: OptionValueState[];
+};
+
+const isPurchasable = (variant: CatalogVariant) => variant.isAvailable && variant.priceAvailable;
+
+function matchesSelection(variant: CatalogVariant, selection: OptionSelection): boolean {
+  return Object.entries(selection).every(
+    ([optionId, value]) => variant.optionValues[optionId] === value,
+  );
+}
+
+/**
+ * Option pickers ("Cor", "Tamanho"...) can replace the plain variant list only when
+ * every variant carries a value for every option and no two variants share the
+ * same combination; otherwise the page keeps listing variants one by one.
+ */
+export function canSelectByOptions(options: CatalogOption[], variants: CatalogVariant[]): boolean {
+  if (variants.length < 2 || options.length === 0) return false;
+  const seen = new Set<string>();
+  for (const variant of variants) {
+    const key = options.map((option) => variant.optionValues[option.id]);
+    if (key.some((value) => value === undefined)) return false;
+    const serialized = JSON.stringify(key);
+    if (seen.has(serialized)) return false;
+    seen.add(serialized);
+  }
+  return true;
+}
+
+/** Values in Medusa's order, keeping only those some variant actually uses. */
+export function buildOptionSelectors(
+  options: CatalogOption[],
+  variants: CatalogVariant[],
+  selection: OptionSelection,
+): OptionSelector[] {
+  return options.map((option) => {
+    const used = new Set(variants.map((variant) => variant.optionValues[option.id]));
+    const ordered = [...option.values, ...used].filter(
+      (value, index, all): value is string =>
+        typeof value === "string" && used.has(value) && all.indexOf(value) === index,
+    );
+    const others = Object.fromEntries(
+      Object.entries(selection).filter(([optionId]) => optionId !== option.id),
+    );
+    return {
+      id: option.id,
+      title: option.title,
+      values: ordered.map((value) => ({
+        value,
+        purchasable: variants.some(
+          (variant) =>
+            variant.optionValues[option.id] === value &&
+            matchesSelection(variant, others) &&
+            isPurchasable(variant),
+        ),
+      })),
+    };
+  });
+}
+
+/** Options with a single value need no choice; start with them already chosen. */
+export function initialOptionSelection(selectors: OptionSelector[]): OptionSelection {
+  return Object.fromEntries(
+    selectors
+      .filter((selector) => selector.values.length === 1)
+      .map((selector) => [selector.id, selector.values[0].value]),
+  );
+}
+
+/**
+ * Choose a value; earlier choices that no variant combines with it are dropped, so
+ * the selection always points at variants that exist.
+ */
+export function selectOptionValue(
+  variants: CatalogVariant[],
+  selection: OptionSelection,
+  optionId: string,
+  value: string,
+): OptionSelection {
+  const next: OptionSelection = { ...selection, [optionId]: value };
+  if (variants.some((variant) => matchesSelection(variant, next))) return next;
+  const compatible: OptionSelection = Object.fromEntries(
+    Object.entries(next).filter(
+      ([id, chosen]) =>
+        id === optionId ||
+        variants.some(
+          (variant) =>
+            variant.optionValues[optionId] === value && variant.optionValues[id] === chosen,
+        ),
+    ),
+  );
+  if (variants.some((variant) => matchesSelection(variant, compatible))) return compatible;
+  return { [optionId]: value };
+}
+
+/** The variant the customer is buying: only once every option has a value. */
+export function findVariantForSelection(
+  options: CatalogOption[],
+  variants: CatalogVariant[],
+  selection: OptionSelection,
+): CatalogVariant | undefined {
+  if (!options.every((option) => selection[option.id] !== undefined)) return undefined;
+  return variants.find((variant) => matchesSelection(variant, selection));
+}
+
+/**
+ * Photos to show for a (possibly partial) choice: the chosen variant's, else those
+ * of the first variant matching what was chosen so far (picking a colour before a
+ * size already shows that colour), else the product gallery.
+ */
+export function galleryForSelection(
+  productImages: string[],
+  variants: CatalogVariant[],
+  chosen: CatalogVariant | undefined,
+  selection: OptionSelection,
+): string[] {
+  if (variants.length < 2) return productImages;
+  if (chosen?.images.length) return chosen.images;
+  if (Object.keys(selection).length === 0) return productImages;
+  const matching = variants.filter((variant) => matchesSelection(variant, selection));
+  const withImages =
+    matching.find((variant) => isPurchasable(variant) && variant.images.length > 0) ??
+    matching.find((variant) => variant.images.length > 0);
+  return withImages?.images ?? productImages;
 }
 
 function selectDisplayVariant(variants: CatalogVariant[]): CatalogVariant | undefined {

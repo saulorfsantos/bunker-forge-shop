@@ -124,7 +124,7 @@ function Home() {
                 ? Array.from({ length: 7 }).map((_, index) => (
                     <Skeleton
                       key={`category-skeleton-${index}`}
-                      className="aspect-square rounded-sm bg-bunker-graphite/60"
+                      className="aspect-square rounded-sm bg-bunker-graphite-light/60"
                     />
                   ))
                 : (categoriesQuery.data ?? []).map((category) => (

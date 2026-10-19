@@ -11,7 +11,7 @@ interface BunkerBadgeProps {
 
 const styles: Record<Variant, string> = {
   danger: "bg-bunker-danger text-bunker-text-primary",
-  promo: "bg-bunker-military text-bunker-text-primary",
+  promo: "bg-bunker-gold text-bunker-black",
   new: "bg-bunker-tan text-bunker-black",
   tan: "bg-bunker-tan text-bunker-black",
   military: "bg-bunker-military text-bunker-text-primary",

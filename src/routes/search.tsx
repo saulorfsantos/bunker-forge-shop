@@ -63,7 +63,7 @@ function SearchPage() {
             {Array.from({ length: 8 }).map((_, index) => (
               <Skeleton
                 key={`search-skeleton-${index}`}
-                className="aspect-[3/4] bg-bunker-graphite/60 rounded-sm"
+                className="aspect-[3/4] bg-bunker-graphite-light/60 rounded-sm"
               />
             ))}
           </div>

@@ -656,7 +656,7 @@ function PixPanel({
           <button
             type="submit"
             disabled={disabled}
-            className="mt-4 flex w-full items-center justify-center gap-2 bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark disabled:cursor-wait disabled:opacity-60"
+            className="mt-4 flex w-full items-center justify-center gap-2 bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold disabled:cursor-wait disabled:opacity-60"
           >
             {phase === "loading" && <LoaderCircle className="h-4 w-4 animate-spin" />}
             Gerar novo Pix

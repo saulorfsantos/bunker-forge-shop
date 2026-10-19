@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ArtSlide, HeroSlide, PhotoSlide } from "@/data/hero-slides";
 import { cn } from "@/lib/utils";
 
-export const HERO_AUTOPLAY_MS = 6000;
+/** Time each home banner stays on screen; 4.5 s per Adriano (19/10). */
+export const HERO_AUTOPLAY_MS = 4500;
 
 function SlideTitle({ slide, as: Tag }: { slide: PhotoSlide; as: "h1" | "h2" }) {
   const parts = slide.highlight ? slide.title.split(slide.highlight) : [slide.title];
@@ -64,7 +65,13 @@ function ArtBanner({
   );
 }
 
-export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+export function HeroCarousel({
+  slides,
+  autoplayMs = HERO_AUTOPLAY_MS,
+}: {
+  slides: HeroSlide[];
+  autoplayMs?: number;
+}) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selected, setSelected] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -92,9 +99,9 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") emblaApi.scrollNext();
-    }, HERO_AUTOPLAY_MS);
+    }, autoplayMs);
     return () => window.clearInterval(timer);
-  }, [emblaApi, paused, slides.length, selected]);
+  }, [emblaApi, paused, slides.length, selected, autoplayMs]);
 
   return (
     <section
@@ -146,7 +153,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 <div className="relative max-w-[1400px] mx-auto px-4 sm:px-10 py-8 w-full">
                   <div className="max-w-2xl">
                     <p
-                      className="text-bunker-military-light font-display uppercase tracking-widest text-base sm:text-2xl lg:text-xl xl:text-2xl mb-3 xl:mb-4"
+                      className="text-bunker-gold font-display uppercase tracking-widest text-base sm:text-2xl lg:text-xl xl:text-2xl mb-3 xl:mb-4"
                       style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
                     >
                       {slide.eyebrow}
@@ -160,7 +167,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                         to="/category/$slug"
                         params={{ slug: slide.categoryHandle }}
                         tabIndex={index === selected ? 0 : -1}
-                        className="inline-flex items-center justify-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+                        className="inline-flex items-center justify-center bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-gold transition-colors"
                       >
                         {slide.cta}
                       </Link>

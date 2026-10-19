@@ -96,7 +96,7 @@ function OrderConfirmationPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             to="/"
-            className="bg-bunker-tan px-5 py-3 text-center text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+            className="bg-bunker-tan px-5 py-3 text-center text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold"
           >
             Voltar ao arsenal
           </Link>
@@ -145,7 +145,7 @@ function Receipt({ order }: { order: OrderReceipt }) {
         </dl>
 
         {order.items && order.items.length > 0 && (
-          <ul className="divide-y divide-bunker-graphite py-2">
+          <ul className="divide-y divide-bunker-graphite-light py-2">
             {order.items.map((item) => (
               <li key={item.id} className="flex items-center gap-3 py-3 text-sm">
                 <PackageCheck className="h-4 w-4 shrink-0 text-bunker-military-light" />

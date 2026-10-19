@@ -15,7 +15,10 @@ test("checkout renders and initializes only payment methods exposed by capabilit
 
 test("PDP add-to-cart passes the explicitly selected variant id", () => {
   const productRoute = readSource("../src/routes/product.$id.tsx");
-  assert.match(productRoute, /const selectedVariant = resolveSelectedVariant/);
+  assert.match(
+    productRoute,
+    /const selectedVariant = selectByOptions\s*\?\s*findVariantForSelection\([\s\S]*?: resolveSelectedVariant\(/,
+  );
   assert.match(productRoute, /if \(!selectedVariant\)[\s\S]*return;/);
   assert.match(productRoute, /await addItem\(selectedVariant\.id, qty\)/);
 });
@@ -42,10 +45,20 @@ test("active product media preserves the whole product without cover cropping", 
   const cartRoute = readSource("../src/routes/cart.tsx");
   const header = readSource("../src/components/Header.tsx");
 
-  assert.match(productCard, /SafeProductImage[\s\S]*object-contain p-3/);
-  assert.match(productRoute, /SafeProductImage[\s\S]*object-contain p-1/);
-  assert.match(productRoute, /SafeProductImage[\s\S]*object-contain p-4 md:p-6/);
-  assert.match(cartRoute, /SafeProductImage[\s\S]*object-contain p-2/);
+  // Every product photo sits on the same neutral stage and is contained, centred.
+  const styles = readSource("../src/styles.css");
+  assert.match(
+    styles,
+    /\.product-stage-image \{[^}]*object-fit: contain;[^}]*object-position: center;/,
+  );
+  assert.match(
+    styles,
+    /\.product-stage \{[^}]*background-color: var\(--color-bunker-product-stage\);/,
+  );
+  assert.match(productCard, /SafeProductImage[\s\S]*product-stage-image p-4/);
+  assert.match(productRoute, /SafeProductImage[\s\S]*product-stage-image p-1/);
+  assert.match(productRoute, /SafeProductImage[\s\S]*product-stage-image p-4 md:p-6/);
+  assert.match(cartRoute, /SafeProductImage[\s\S]*product-stage-image p-2/);
   assert.match(header, /SafeProductImage[\s\S]*object-contain p-1/);
 
   for (const source of [productCard, productRoute, cartRoute, header]) {

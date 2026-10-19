@@ -105,7 +105,7 @@ export function ProductCarousel({
             onClick={() => scrollBy(-1)}
             disabled={!canLeft}
             className={cn(
-              "hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 items-center justify-center w-11 h-11 rounded-sm bg-bunker-charcoal border border-bunker-graphite text-bunker-tan hover:border-bunker-tan transition-all z-10",
+              "hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/3 items-center justify-center w-11 h-11 rounded-sm bg-bunker-charcoal border border-bunker-graphite text-bunker-tan hover:border-bunker-tan transition-all z-10",
               !canLeft && "opacity-30 cursor-not-allowed",
             )}
           >
@@ -117,7 +117,7 @@ export function ProductCarousel({
             onClick={() => scrollBy(1)}
             disabled={!canRight}
             className={cn(
-              "hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 items-center justify-center w-11 h-11 rounded-sm bg-bunker-charcoal border border-bunker-graphite text-bunker-tan hover:border-bunker-tan transition-all z-10",
+              "hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/3 items-center justify-center w-11 h-11 rounded-sm bg-bunker-charcoal border border-bunker-graphite text-bunker-tan hover:border-bunker-tan transition-all z-10",
               !canRight && "opacity-30 cursor-not-allowed",
             )}
           >

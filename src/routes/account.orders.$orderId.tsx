@@ -80,7 +80,7 @@ function CustomerOrderPage() {
             <div className="p-5">
               <h2 className="font-display text-xl uppercase tracking-wider">Itens</h2>
               {order.items?.length ? (
-                <ul className="mt-3 divide-y divide-bunker-graphite">
+                <ul className="mt-3 divide-y divide-bunker-graphite-light">
                   {order.items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3 py-4">
                       <PackageCheck className="h-5 w-5 shrink-0 text-bunker-military-light" />

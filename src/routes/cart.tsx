@@ -87,7 +87,7 @@ function CartPage() {
           </p>
           <Link
             to="/"
-            className="inline-block mt-6 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-tan-dark transition-colors"
+            className="inline-block mt-6 bg-bunker-tan text-bunker-black uppercase font-bold tracking-wider text-sm px-6 py-3 rounded-sm hover:bg-bunker-gold transition-colors"
           >
             Explorar Arsenal
           </Link>
@@ -116,12 +116,12 @@ function CartPage() {
                   <Link
                     to="/product/$id"
                     params={{ id: p.id }}
-                    className="shrink-0 w-24 h-24 bg-bunker-black border border-bunker-graphite rounded-sm overflow-hidden"
+                    className="product-stage shrink-0 w-24 h-24 border border-bunker-graphite-light rounded-sm overflow-hidden"
                   >
                     <SafeProductImage
                       src={p.images[0]}
                       alt={p.name}
-                      className="w-full h-full object-contain p-2"
+                      className="product-stage-image p-2"
                     />
                   </Link>
                   <div className="flex-1 flex flex-col">
@@ -149,7 +149,7 @@ function CartPage() {
                           type="button"
                           disabled={isPending}
                           onClick={() => void updateQuantity(item.id, item.quantity - 1)}
-                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite-light disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Diminuir"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ function CartPage() {
                           type="button"
                           disabled={isPending}
                           onClick={() => void updateQuantity(item.id, item.quantity + 1)}
-                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-2 py-1 text-bunker-tan hover:bg-bunker-graphite-light disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Aumentar"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -289,7 +289,7 @@ function CartPage() {
                 onClick={(event) => {
                   if (isPending) event.preventDefault();
                 }}
-                className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+                className="mt-5 flex w-full items-center justify-center bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold"
               >
                 Finalizar pedido
               </Link>

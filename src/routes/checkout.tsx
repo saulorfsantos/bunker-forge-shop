@@ -232,7 +232,7 @@ function CheckoutPage() {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="bg-bunker-tan px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+              className="bg-bunker-tan px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold"
             >
               Tentar novamente
             </button>
@@ -261,7 +261,7 @@ function CheckoutPage() {
           </p>
           <Link
             to="/"
-            className="mt-7 inline-flex bg-bunker-tan px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark"
+            className="mt-7 inline-flex bg-bunker-tan px-6 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold"
           >
             Explorar arsenal
           </Link>
@@ -597,7 +597,7 @@ function PrimaryButton({ isSubmitting, children }: { isSubmitting: boolean; chil
     <button
       type="submit"
       disabled={isSubmitting}
-      className="mt-5 flex w-full items-center justify-center gap-2 bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark disabled:cursor-wait disabled:opacity-60"
+      className="mt-5 flex w-full items-center justify-center gap-2 bg-bunker-tan py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold disabled:cursor-wait disabled:opacity-60"
     >
       {isSubmitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
       {children}
@@ -627,7 +627,7 @@ function OrderSummary({ cart }: { cart: CheckoutCart }) {
           {itemTotal} {itemTotal === 1 ? "item" : "itens"}
         </span>
       </div>
-      <ul className="divide-y divide-bunker-graphite">
+      <ul className="divide-y divide-bunker-graphite-light">
         {cart.items?.map((item) => (
           <li key={item.id} className="flex gap-3 py-3 text-sm">
             <span className="grid h-7 w-7 shrink-0 place-items-center border border-bunker-graphite bg-bunker-black text-xs text-bunker-tan">

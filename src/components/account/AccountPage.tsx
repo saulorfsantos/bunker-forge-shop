@@ -71,7 +71,7 @@ export function AccountSubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-bunker-tan px-5 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-tan-dark disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full bg-bunker-tan px-5 py-3 text-sm font-bold uppercase tracking-wider text-bunker-black transition-colors hover:bg-bunker-gold disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Aguarde..." : children}
     </button>
