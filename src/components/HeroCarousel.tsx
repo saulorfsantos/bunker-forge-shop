@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FocusEvent, type PointerEvent } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -78,7 +78,13 @@ export function HeroCarousel({
 }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selected, setSelected] = useState(0);
-  const [paused, setPaused] = useState(false);
+  // Pause only for a real mouse hover, keyboard focus or a finger on the banner.
+  // Phones fake a "mouse enter" and focus the link on every tap and never send the
+  // matching leave/blur, which used to stop the carousel for good (19/10).
+  const [hovered, setHovered] = useState(false);
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const paused = hovered || keyboardFocus || dragging;
 
   const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
@@ -88,23 +94,29 @@ export function HeroCarousel({
     if (!emblaApi) return;
     const onSelect = () => setSelected(emblaApi.selectedScrollSnap());
     onSelect();
+    const onPointerDown = () => setDragging(true);
+    const onPointerUp = () => setDragging(false);
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
+    emblaApi.on("pointerDown", onPointerDown);
+    emblaApi.on("pointerUp", onPointerUp);
     return () => {
       emblaApi.off("select", onSelect);
       emblaApi.off("reInit", onSelect);
+      emblaApi.off("pointerDown", onPointerDown);
+      emblaApi.off("pointerUp", onPointerUp);
     };
   }, [emblaApi]);
 
-  // Advance on its own, except while the visitor hovers/focuses it, the tab is
-  // hidden, or the system asks for reduced motion.
+  // Advance on its own, except while paused (above) or the tab is hidden. With
+  // reduced motion on, slides still change but jump instead of sliding.
   useEffect(() => {
     if (!emblaApi || paused || slides.length < 2) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const jump = Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
     // The effect restarts on every slide change, so each slide gets its own delay.
     const delay = selected === 0 ? firstSlideMs : autoplayMs;
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") emblaApi.scrollNext();
+      if (document.visibilityState === "visible") emblaApi.scrollNext(jump);
     }, delay);
     return () => window.clearInterval(timer);
   }, [emblaApi, paused, slides.length, selected, autoplayMs, firstSlideMs]);
@@ -114,10 +126,18 @@ export function HeroCarousel({
       className="relative bg-bunker-black"
       aria-roledescription="carousel"
       aria-label="Destaques da Bunker 81"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onPointerEnter={(event: PointerEvent) => {
+        if (event.pointerType === "mouse") setHovered(true);
+      }}
+      onPointerLeave={(event: PointerEvent) => {
+        if (event.pointerType === "mouse") setHovered(false);
+      }}
+      onFocus={(event: FocusEvent) => {
+        if (event.target.matches(":focus-visible")) setKeyboardFocus(true);
+      }}
+      onBlur={(event: FocusEvent) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardFocus(false);
+      }}
     >
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
@@ -211,7 +231,8 @@ export function HeroCarousel({
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2">
+          {/* Below the banner on phones, so the dots never cover the artwork's button. */}
+          <div className="flex justify-center gap-2 py-3 lg:absolute lg:bottom-5 lg:left-0 lg:right-0 lg:py-0">
             {slides.map((slide, index) => (
               <button
                 key={slide.id}
