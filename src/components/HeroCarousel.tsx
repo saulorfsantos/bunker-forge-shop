@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 
 /** Time each home banner stays on screen; 4.5 s per Adriano (19/10). */
 export const HERO_AUTOPLAY_MS = 4500;
+/** The opening banner moves on sooner, every time it comes round (Saulo, 19/10). */
+export const HERO_FIRST_SLIDE_MS = 2000;
 
 function SlideTitle({ slide, as: Tag }: { slide: PhotoSlide; as: "h1" | "h2" }) {
   const parts = slide.highlight ? slide.title.split(slide.highlight) : [slide.title];
@@ -68,9 +70,11 @@ function ArtBanner({
 export function HeroCarousel({
   slides,
   autoplayMs = HERO_AUTOPLAY_MS,
+  firstSlideMs = HERO_FIRST_SLIDE_MS,
 }: {
   slides: HeroSlide[];
   autoplayMs?: number;
+  firstSlideMs?: number;
 }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selected, setSelected] = useState(0);
@@ -97,11 +101,13 @@ export function HeroCarousel({
   useEffect(() => {
     if (!emblaApi || paused || slides.length < 2) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    // The effect restarts on every slide change, so each slide gets its own delay.
+    const delay = selected === 0 ? firstSlideMs : autoplayMs;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") emblaApi.scrollNext();
-    }, autoplayMs);
+    }, delay);
     return () => window.clearInterval(timer);
-  }, [emblaApi, paused, slides.length, selected, autoplayMs]);
+  }, [emblaApi, paused, slides.length, selected, autoplayMs, firstSlideMs]);
 
   return (
     <section

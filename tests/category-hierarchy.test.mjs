@@ -155,6 +155,10 @@ test("home opens with the photo slide plus the six approved artworks", () => {
   assert.equal([...slidesSource.matchAll(/mobile: \w+Mobile/g)].length, 6);
   assert.match(carouselSource, /to="\/product\/\$id" params=\{\{ id: slide\.link\.id \}\}/);
   assert.match(carouselSource, /prefers-reduced-motion: reduce/);
+  // Opening banner 2 s, the others 4.5 s.
+  assert.match(carouselSource, /HERO_AUTOPLAY_MS = 4500;/);
+  assert.match(carouselSource, /HERO_FIRST_SLIDE_MS = 2000;/);
+  assert.match(carouselSource, /const delay = selected === 0 \? firstSlideMs : autoplayMs;/);
   assert.match(carouselSource, /aria-roledescription="carousel"/);
 });
 
