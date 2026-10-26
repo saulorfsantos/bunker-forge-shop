@@ -82,10 +82,16 @@ async function fetchProducts(options: {
   );
 }
 
-/** Empty when the collection does not exist yet, so callers can fall back to another list. */
-async function fetchCollectionProducts(handle: string, limit: number) {
-  const { collections } = await sdk.store.collection.list({ handle, limit: 1, fields: "id" });
-  const collectionId = collections[0]?.id;
+/**
+ * Products of the first collection whose handle starts with `handlePrefix`; empty when there is
+ * none, so callers can fall back to another list. A prefix because the panel derives the handle
+ * from the title ("Destaques " became "destaques-").
+ */
+async function fetchCollectionProducts(handlePrefix: string, limit: number) {
+  const { collections } = await sdk.store.collection.list({ limit: 100, fields: "id,handle" });
+  const collectionId = collections.find((c: { handle?: string | null }) =>
+    c.handle?.startsWith(handlePrefix),
+  )?.id;
   return collectionId ? fetchProducts({ limit, collectionIds: [collectionId] }) : [];
 }
 

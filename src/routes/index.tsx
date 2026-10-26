@@ -16,8 +16,9 @@ import { categoryIdsByHandle } from "@/lib/category-hierarchy";
 import { HERO_SLIDES } from "@/data/hero-slides";
 import bunkerBg from "@/assets/background-header.jpg";
 
-// Adriano picks the showcase in the Medusa panel through the collection with this handle;
-// while it is missing or empty, the showcase falls back to the categories below.
+// Adriano picks the showcase in the Medusa panel through a collection whose handle starts with
+// this ("destaque", "destaques"...); while it is missing or empty, the showcase falls back to the
+// categories below. Collections never show in the menu, which only lists categories.
 const FEATURED_COLLECTION_HANDLE = "destaque";
 // Old handles stay listed so the showcases keep working until the menu migration is applied.
 const FEATURED_HANDLES = ["armas-airsoft", "airguns-carabinas", "airsoft", "pressao"];
