@@ -6,11 +6,19 @@ import { ProductCarousel } from "@/components/ProductCarousel";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HeroCarousel } from "@/components/HeroCarousel";
-import { useCategories, useCategoryTree, useProductsByCategory } from "@/hooks/useMedusaProducts";
+import {
+  useCategories,
+  useCategoryTree,
+  useProductsByCategory,
+  useProductsByCollection,
+} from "@/hooks/useMedusaProducts";
 import { categoryIdsByHandle } from "@/lib/category-hierarchy";
 import { HERO_SLIDES } from "@/data/hero-slides";
 import bunkerBg from "@/assets/background-header.jpg";
 
+// Adriano picks the showcase in the Medusa panel through the collection with this handle;
+// while it is missing or empty, the showcase falls back to the categories below.
+const FEATURED_COLLECTION_HANDLE = "destaque";
 // Old handles stay listed so the showcases keep working until the menu migration is applied.
 const FEATURED_HANDLES = ["armas-airsoft", "airguns-carabinas", "airsoft", "pressao"];
 const GEAR_HANDLES = ["loadout", "acessorios"];
@@ -40,7 +48,10 @@ function Home() {
     () => categoryIdsByHandle(treeQuery.data ?? [], GEAR_HANDLES),
     [treeQuery.data],
   );
-  const featuredQuery = useProductsByCategory(featuredIds, 8);
+  const featuredCollectionQuery = useProductsByCollection(FEATURED_COLLECTION_HANDLE, 8);
+  const featuredCategoryQuery = useProductsByCategory(featuredIds, 8);
+  const showCollection = Boolean(featuredCollectionQuery.data?.length);
+  const featuredQuery = showCollection ? featuredCollectionQuery : featuredCategoryQuery;
   const gearQuery = useProductsByCategory(gearIds, 8);
 
   return (
@@ -57,8 +68,11 @@ function Home() {
           />
           <ProductCarousel
             products={featuredQuery.data ?? []}
-            isLoading={treeQuery.isLoading || featuredQuery.isLoading}
-            isError={treeQuery.isError || featuredQuery.isError}
+            isLoading={
+              featuredCollectionQuery.isLoading ||
+              (!showCollection && (treeQuery.isLoading || featuredQuery.isLoading))
+            }
+            isError={!showCollection && (treeQuery.isError || featuredQuery.isError)}
             onRetry={() => void (treeQuery.isError ? treeQuery.refetch() : featuredQuery.refetch())}
             skeletonCount={4}
           />

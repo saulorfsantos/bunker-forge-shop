@@ -64,17 +64,29 @@ export function mapMedusaProductDetail(product: MedusaProductDetail): ProductDet
   };
 }
 
-async function fetchProducts(options: { limit?: number; categoryIds?: string[] }) {
+async function fetchProducts(options: {
+  limit?: number;
+  categoryIds?: string[];
+  collectionIds?: string[];
+}) {
   const { products } = await sdk.store.product.list({
     limit: options.limit ?? 8,
     region_id: BRAZIL_REGION_ID,
     fields: PRODUCT_LIST_FIELDS,
     ...(options.categoryIds?.length ? { category_id: options.categoryIds } : {}),
+    ...(options.collectionIds?.length ? { collection_id: options.collectionIds } : {}),
   });
 
   return (products as MedusaProduct[]).map((product) =>
     mapMedusaProduct(product, placeholderImage, resolveLocalProductImages),
   );
+}
+
+/** Empty when the collection does not exist yet, so callers can fall back to another list. */
+async function fetchCollectionProducts(handle: string, limit: number) {
+  const { collections } = await sdk.store.collection.list({ handle, limit: 1, fields: "id" });
+  const collectionId = collections[0]?.id;
+  return collectionId ? fetchProducts({ limit, collectionIds: [collectionId] }) : [];
 }
 
 async function fetchSearchProducts(query: string, limit = 50) {
@@ -103,6 +115,8 @@ export const medusaQueryKeys = {
   products: (limit?: number) => ["medusa", "products", { limit }] as const,
   productsByCategory: (categoryIds: string[], limit?: number) =>
     ["medusa", "products", "category", categoryIds, { limit }] as const,
+  productsByCollection: (handle: string, limit?: number) =>
+    ["medusa", "products", "collection", handle, { limit }] as const,
   product: (id: string) => ["medusa", "products", "detail", id] as const,
   search: (q: string) => ["medusa", "products", "search", q] as const,
   categories: () => ["medusa", "categories"] as const,
@@ -121,6 +135,13 @@ export function useProductsByCategory(categoryIds: string[], limit = 8) {
     queryKey: medusaQueryKeys.productsByCategory(categoryIds, limit),
     queryFn: () => fetchProducts({ limit, categoryIds }),
     enabled: categoryIds.length > 0,
+  });
+}
+
+export function useProductsByCollection(handle: string, limit = 8) {
+  return useQuery({
+    queryKey: medusaQueryKeys.productsByCollection(handle, limit),
+    queryFn: () => fetchCollectionProducts(handle, limit),
   });
 }
 
