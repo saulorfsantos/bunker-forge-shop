@@ -65,7 +65,7 @@ function Home() {
         <div className="max-w-[1400px] mx-auto px-4 py-14">
           <SectionTitle
             title="Arsenal em Destaque"
-            subtitle="Rifles e pistolas disponíveis no catálogo"
+            subtitle="Seleção especial da Bunker 81"
           />
           <ProductCarousel
             products={featuredQuery.data ?? []}
