@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Minus, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Minus, Plus } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { PriceTag } from "@/components/PriceTag";
 import { BunkerBadge } from "@/components/BunkerBadge";
@@ -58,6 +58,22 @@ function ProductPage() {
   const [tab, setTab] = useState<Tab>("desc");
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [chosenOptions, setChosenOptions] = useState<OptionSelection>({});
+  const thumbsRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollThumbsUp, setCanScrollThumbsUp] = useState(false);
+  const [canScrollThumbsDown, setCanScrollThumbsDown] = useState(false);
+
+  function syncThumbArrows(el: HTMLDivElement | null) {
+    if (!el) return;
+    setCanScrollThumbsUp(el.scrollTop > 0);
+    setCanScrollThumbsDown(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+  }
+
+  // The thumbnail strip turns vertical at md, so re-check the arrows when the window changes size.
+  useEffect(() => {
+    const onResize = () => syncThumbArrows(thumbsRef.current);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     setMainImage(0);
@@ -146,6 +162,11 @@ function ProductPage() {
     optionSelection,
   );
   const shownImage = Math.min(mainImage, gallery.length - 1);
+
+  // One page = 4 thumbnails (80px + 8px gap), so the last one of the old page stays visible.
+  function scrollThumbs(direction: 1 | -1) {
+    thumbsRef.current?.scrollBy({ top: direction * 4 * 88, behavior: "smooth" });
+  }
   const displayedPrice = selectedVariant?.currentPrice ?? product.currentPrice;
   const displayedOriginalPrice = selectedVariant?.originalPrice ?? product.price1;
   const priceAvailable = selectedVariant?.priceAvailable ?? product.priceAvailable;
@@ -207,31 +228,61 @@ function ProductPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,55fr)_minmax(0,45fr)] gap-8 lg:gap-10">
           {/* Gallery */}
-          <div className="flex flex-col-reverse md:flex-row gap-3">
-            <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
-              {gallery.length > 1 &&
-                gallery.map((src, i) => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setMainImage(i)}
-                    aria-pressed={i === shownImage}
-                    className={cn(
-                      "product-stage shrink-0 w-16 h-16 md:w-20 md:h-20 border-2 rounded-sm overflow-hidden transition-colors",
-                      i === shownImage
-                        ? "border-bunker-tan"
-                        : "border-bunker-graphite-light hover:border-bunker-gold",
-                    )}
-                    aria-label={`Foto ${i + 1} de ${gallery.length}`}
-                  >
-                    <SafeProductImage
-                      src={src}
-                      alt=""
-                      loading="lazy"
-                      className="product-stage-image p-1"
-                    />
-                  </button>
-                ))}
+          <div className="flex flex-col-reverse md:flex-row md:items-start gap-3">
+            <div className="relative shrink-0">
+              {/* Desktop shows 5 thumbnails (5 × 80px + 4 × 8px gap); the arrows page through the rest. */}
+              <div
+                ref={(el) => {
+                  thumbsRef.current = el;
+                  syncThumbArrows(el);
+                }}
+                onScroll={(e) => syncThumbArrows(e.currentTarget)}
+                className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:max-h-[432px] md:snap-y md:snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {gallery.length > 1 &&
+                  gallery.map((src, i) => (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => setMainImage(i)}
+                      aria-pressed={i === shownImage}
+                      className={cn(
+                        "product-stage shrink-0 snap-start w-16 h-16 md:w-20 md:h-20 border-2 rounded-sm overflow-hidden transition-colors",
+                        i === shownImage
+                          ? "border-bunker-tan"
+                          : "border-bunker-graphite-light hover:border-bunker-gold",
+                      )}
+                      aria-label={`Foto ${i + 1} de ${gallery.length}`}
+                    >
+                      <SafeProductImage
+                        src={src}
+                        alt=""
+                        loading="lazy"
+                        className="product-stage-image p-1"
+                      />
+                    </button>
+                  ))}
+              </div>
+              {canScrollThumbsUp && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbs(-1)}
+                  aria-label="Fotos anteriores"
+                  className="hidden md:flex absolute top-0 inset-x-0 h-8 items-center justify-center bg-bunker-black/80 text-bunker-tan hover:text-bunker-gold rounded-t-sm transition-colors"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              )}
+              {canScrollThumbsDown && (
+                <button
+                  type="button"
+                  onClick={() => scrollThumbs(1)}
+                  aria-label="Mais fotos"
+                  className="hidden md:flex absolute bottom-0 inset-x-0 h-8 items-center justify-center bg-bunker-black/80 text-bunker-tan hover:text-bunker-gold rounded-b-sm transition-colors"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                </button>
+              )}
             </div>
             <div className="product-stage relative flex-1 aspect-square border border-bunker-graphite-light rounded-sm overflow-hidden">
               <SafeProductImage
