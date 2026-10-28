@@ -199,6 +199,15 @@ test("Medusa images preserve backend order and win over local images", () => {
   );
 });
 
+test("cards keep the panel thumbnail as cover, followed by the other Medusa images", () => {
+  const product = mapMedusaProduct(
+    { ...productBase, thumbnail: "cover.jpg", images: [{ url: "front.jpg" }, { url: "cover.jpg" }] },
+    "placeholder.png",
+    resolveLocalImages,
+  );
+  assert.deepEqual(product.images, ["cover.jpg", "front.jpg"]);
+});
+
 test("Medusa thumbnail wins over local images", () => {
   assert.deepEqual(
     resolveProductImages(

@@ -101,9 +101,14 @@ export function Header() {
             <Link
               to={customer ? "/account" : "/login"}
               aria-label={customer ? "Minha conta" : "Entrar"}
-              className="relative p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
+              className="relative flex items-center gap-2 p-2 text-bunker-text-primary hover:text-bunker-tan transition-colors"
             >
               <UserRound className="w-5 h-5" />
+              {customer?.first_name && (
+                <span className="hidden md:inline max-w-[10rem] truncate text-sm font-semibold">
+                  Olá, {customer.first_name.trim().split(/\s+/)[0]}
+                </span>
+              )}
             </Link>
             {favorites.length > 0 && (
               <span

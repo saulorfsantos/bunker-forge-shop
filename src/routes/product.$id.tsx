@@ -295,7 +295,7 @@ function ProductPage() {
                 className="product-stage-image p-4 md:p-6"
               />
               <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                {discountPercent >= 10 && (
+                {discountPercent >= 1 && (
                   <BunkerBadge variant="danger">-{discountPercent}%</BunkerBadge>
                 )}
                 {isPromo && <BunkerBadge variant="promo">Promo</BunkerBadge>}

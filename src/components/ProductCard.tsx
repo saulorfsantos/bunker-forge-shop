@@ -39,11 +39,24 @@ export function ProductCard({ product, className }: ProductCardProps) {
           src={product.images[0]}
           alt={product.name}
           loading="lazy"
-          className="product-stage-image p-4 transition-transform duration-500 group-hover:scale-105"
+          className={cn(
+            "product-stage-image p-4 transition-transform duration-500 group-hover:scale-105",
+            // As fotos usam mix-blend-multiply: sobrepostas, as duas apareceriam juntas.
+            product.images[1] && "transition-[transform,opacity] group-hover:opacity-0",
+          )}
         />
+        {product.images[1] && (
+          <SafeProductImage
+            src={product.images[1]}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="product-stage-image absolute inset-0 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          />
+        )}
 
         <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {product.discountPercent >= 10 && (
+          {product.discountPercent >= 1 && (
             <BunkerBadge variant="danger">-{product.discountPercent}%</BunkerBadge>
           )}
           {product.isPromo && <BunkerBadge variant="promo">Promo</BunkerBadge>}
