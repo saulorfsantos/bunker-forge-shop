@@ -31,7 +31,7 @@ export const sdk = new Medusa({
 export const BRAZIL_REGION_ID = "reg_01KS62SJ6RCSCZFKJYZ12FN96Y";
 
 export const PRODUCT_LIST_FIELDS =
-  "*variants.calculated_price,id,title,handle,thumbnail,description,*variants,+variants.inventory_quantity,*categories,metadata";
+  "*variants.calculated_price,id,title,handle,thumbnail,*images,description,*variants,+variants.inventory_quantity,*categories,metadata";
 
 /** localStorage key for the Medusa cart id (separate from mock cart items). */
 export const MEDUSA_CART_ID_KEY = "bunker81-medusa-cart-id";

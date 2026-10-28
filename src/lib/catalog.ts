@@ -299,6 +299,12 @@ export function resolveProductImages(
   return [placeholderImage];
 }
 
+/** Card: a capa (thumbnail) do painel vem primeiro; a foto seguinte aparece no hover. */
+function cardImages(product: MedusaProduct, images: string[]): string[] {
+  const cover = product.thumbnail?.trim();
+  return cover ? [cover, ...images.filter((url) => url !== cover)] : images;
+}
+
 export function mapMedusaProduct(
   product: MedusaProduct,
   placeholderImage: string,
@@ -324,7 +330,7 @@ export function mapMedusaProduct(
     brand: productBrand(product),
     sku: displayVariant?.sku ?? "",
     defaultVariantId: hasSinglePurchasableVariant ? variants[0].id : undefined,
-    images: resolveProductImages(product, placeholderImage, resolveLocalImages),
+    images: cardImages(product, resolveProductImages(product, placeholderImage, resolveLocalImages)),
     description: product.description ?? "",
     specs: {},
     costPrice: price,
