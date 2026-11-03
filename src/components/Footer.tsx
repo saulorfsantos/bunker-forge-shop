@@ -38,6 +38,7 @@ export function Footer() {
       <div className="border-t border-bunker-graphite">
         <div className="max-w-[1400px] mx-auto px-4 py-5 text-center text-xs">
           <p>© 2026 Bunker 81 Airsoft. Todos os direitos reservados.</p>
+          <p className="mt-1 text-[11px] tracking-wide opacity-60">Powered by Menoh</p>
         </div>
       </div>
     </footer>
