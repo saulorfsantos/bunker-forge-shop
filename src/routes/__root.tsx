@@ -6,6 +6,28 @@ import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import mascote from "@/assets/mascote.png";
+import logo from "@/assets/logo-shield.png";
+
+const SITE = "https://bunker81.com.br";
+
+// Dados de marca para o Google ligar a busca "Bunker 81" ao site.
+const brandJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Bunker 81 Airsoft",
+    alternateName: ["Bunker 81", "Bunker81"],
+    url: `${SITE}/`,
+    logo: `${SITE}${logo}`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Bunker 81 Airsoft",
+    alternateName: ["Bunker 81", "Bunker81"],
+    url: `${SITE}/`,
+  },
+];
 
 import appCss from "../styles.css?url";
 
@@ -42,6 +64,7 @@ export const Route = createRootRoute({
           "Catálogo online de Airsoft, armas de pressão e equipamentos táticos da Bunker 81.",
       },
       { name: "author", content: "Bunker 81 Airsoft" },
+      { "script:ld+json": brandJsonLd },
       { property: "og:title", content: "Bunker 81 Airsoft — Onde a missão começa" },
       {
         property: "og:description",
@@ -58,13 +81,11 @@ export const Route = createRootRoute({
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png",
+        content: `${SITE}${logo}`,
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cbf35088-894b-4750-980a-5cb5f7696a6a/id-preview-09b96103--6d0ebff1-6f32-47ed-9910-556823083cee.lovable.app-1777011020911.png",
+        content: `${SITE}${logo}`,
       },
     ],
     links: [
