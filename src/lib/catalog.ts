@@ -46,6 +46,15 @@ export function displayBrand(product: Pick<Product, "brand">): string {
   return product.brand || FALLBACK_BRAND_LABEL;
 }
 
+/** Brand A–Z, then name; products without a registered brand go last. */
+export function compareByBrand(a: Pick<Product, "brand" | "name">, b: Pick<Product, "brand" | "name">) {
+  if (!a.brand !== !b.brand) return a.brand ? -1 : 1;
+  return (
+    a.brand.localeCompare(b.brand, "pt-BR", { sensitivity: "base" }) ||
+    a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+  );
+}
+
 export type CatalogVariant = {
   id: string;
   sku: string;
