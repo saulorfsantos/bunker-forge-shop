@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  compareByBrand,
   buildOptionSelectors,
   canSelectByOptions,
   displayBrand,
@@ -462,3 +463,17 @@ test("single-variant products keep the product gallery", () => {
     vestGallery,
   );
 });
+
+test("orders by brand, then name, with unbranded products last", () => {
+  const items = [
+    { brand: "", name: "Bolsa" },
+    { brand: "Rossi", name: "Luneta" },
+    { brand: "Leão", name: "Óleo" },
+    { brand: "leão", name: "Cilindro" },
+  ];
+  assert.deepEqual(
+    [...items].sort(compareByBrand).map((p) => p.name),
+    ["Cilindro", "Óleo", "Luneta", "Bolsa"],
+  );
+});
+
