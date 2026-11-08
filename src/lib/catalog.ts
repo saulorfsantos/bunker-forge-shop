@@ -55,6 +55,20 @@ export function compareByBrand(a: Pick<Product, "brand" | "name">, b: Pick<Produ
   );
 }
 
+/** Manual order per category id, set in the PDV (`metadata.ordem`). */
+function productPositions(product: Pick<MedusaProduct, "metadata">): Record<string, number> {
+  const positions = product.metadata?.ordem;
+  return positions && typeof positions === "object" ? (positions as Record<string, number>) : {};
+}
+
+/** Products placed by hand in this category first, in that order; the rest by brand. */
+export function compareByRelevance(categoryId: string | undefined) {
+  type Item = Pick<Product, "brand" | "name" | "positions">;
+  const position = (item: Item) => item.positions?.[categoryId ?? ""] ?? Infinity;
+  return (a: Item, b: Item) =>
+    position(a) === position(b) ? compareByBrand(a, b) : position(a) - position(b);
+}
+
 export type CatalogVariant = {
   id: string;
   sku: string;
@@ -337,6 +351,7 @@ export function mapMedusaProduct(
     categoryHandles: (product.categories ?? []).map((category) => category.handle),
     categoryIds: (product.categories ?? []).map((category) => category.id),
     brand: productBrand(product),
+    positions: productPositions(product),
     sku: displayVariant?.sku ?? "",
     defaultVariantId: hasSinglePurchasableVariant ? variants[0].id : undefined,
     images: cardImages(product, resolveProductImages(product, placeholderImage, resolveLocalImages)),

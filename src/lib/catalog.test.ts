@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   compareByBrand,
+  compareByRelevance,
   buildOptionSelectors,
   canSelectByOptions,
   displayBrand,
@@ -477,3 +478,18 @@ test("orders by brand, then name, with unbranded products last", () => {
   );
 });
 
+test("manual positions come first and belong to one category; the rest stays by brand", () => {
+  const items: Array<{ brand: string; name: string; positions?: Record<string, number> }> = [
+    { brand: "Leão", name: "Óleo" },
+    { brand: "Rossi", name: "Luneta", positions: { gas: 1, outra: 0 } },
+    { brand: "Zeta", name: "Bolsa", positions: { gas: 0 } },
+  ];
+  assert.deepEqual(
+    [...items].sort(compareByRelevance("gas")).map((p) => p.name),
+    ["Bolsa", "Luneta", "Óleo"],
+  );
+  assert.deepEqual(
+    [...items].sort(compareByRelevance("nova")).map((p) => p.name),
+    ["Óleo", "Luneta", "Bolsa"],
+  );
+});
