@@ -16,7 +16,7 @@ import {
 } from "@/lib/category-hierarchy";
 import type { Category, Product } from "@/types/product";
 import { cn } from "@/lib/utils";
-import { compareByBrand } from "@/lib/catalog";
+import { compareByRelevance } from "@/lib/catalog";
 
 type MedusaCategoryByHandle = MedusaCategoryNode & {
   parent_category?: { name: string; handle: string } | null;
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/category/$slug")({
   component: CategoryPage,
 });
 
-type SortKey = "brand" | "price-asc" | "price-desc" | "newest";
+type SortKey = "relevance" | "price-asc" | "price-desc" | "newest";
 
 function CategoryPage() {
   const { slug } = Route.useParams();
@@ -89,7 +89,7 @@ function CategoryPage() {
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState<number | null>(null);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [sort, setSort] = useState<SortKey>("brand");
+  const [sort, setSort] = useState<SortKey>("relevance");
   const [openFilters, setOpenFilters] = useState(false);
 
   const filtered = useMemo(() => {
@@ -110,9 +110,19 @@ function CategoryPage() {
     } else if (sort === "price-desc") {
       res.sort((a, b) => compareProductPrices(a, b, "desc"));
     } else if (sort === "newest") res.sort((a, b) => Number(b.isNew) - Number(a.isNew));
-    else res.sort(compareByBrand);
+    else res.sort(compareByRelevance(categoryQuery.data?.id));
     return res;
-  }, [allProducts, selectedSubs, selectedBrands, priceMin, priceMax, maxPrice, inStockOnly, sort]);
+  }, [
+    allProducts,
+    selectedSubs,
+    selectedBrands,
+    priceMin,
+    priceMax,
+    maxPrice,
+    inStockOnly,
+    sort,
+    categoryQuery.data?.id,
+  ]);
 
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -302,7 +312,7 @@ function CategoryPage() {
               className="bg-bunker-charcoal border border-bunker-graphite text-bunker-text-primary rounded-sm px-3 py-2 text-xs uppercase tracking-wider focus:outline-none focus:border-bunker-tan"
               aria-label="Ordenar"
             >
-              <option value="brand">Marca (A–Z)</option>
+              <option value="relevance">Relevância</option>
               <option value="price-asc">Menor preço</option>
               <option value="price-desc">Maior preço</option>
               <option value="newest">Mais novos</option>

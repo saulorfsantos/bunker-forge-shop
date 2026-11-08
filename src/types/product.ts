@@ -10,6 +10,8 @@ export interface Product {
   categoryIds?: string[];
   /** Brand from Medusa `metadata.brand`; empty when not registered. */
   brand: string;
+  /** Manual position per category id, when set in the PDV. */
+  positions?: Record<string, number>;
   sku: string;
   images: string[];
   description: string;
