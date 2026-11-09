@@ -146,8 +146,8 @@ function CategoryPage() {
           <Skeleton className="h-12 w-64 mb-6 bg-bunker-graphite-light/60" />
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8">
             <Skeleton className="hidden lg:block h-96 bg-bunker-graphite-light/60 rounded-sm" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, index) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, index) => (
                 <Skeleton
                   key={`category-product-skeleton-${index}`}
                   className="aspect-[3/4] bg-bunker-graphite-light/60 rounded-sm"
@@ -359,7 +359,7 @@ function CategoryPage() {
                 Nenhum produto encontrado com esses filtros.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {filtered.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
