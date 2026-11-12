@@ -26,7 +26,7 @@ function SearchPage() {
 
   return (
     <Layout>
-      <div className="max-w-[1400px] mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-[1840px] mx-auto px-4 py-8 md:py-12">
         <SectionTitle
           title={q ? `Busca: "${q}"` : "Busca"}
           subtitle={

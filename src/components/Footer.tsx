@@ -4,7 +4,7 @@ import logoShield from "@/assets/logo-shield.png";
 export function Footer() {
   return (
     <footer className="bg-bunker-black border-t border-bunker-graphite text-bunker-text-secondary">
-      <div className="max-w-[1400px] mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div className="max-w-[1840px] mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
         <div>
           <Link to="/" className="flex items-center gap-3 mb-4">
             <img src={logoShield} alt="Bunker 81" className="h-16 w-auto" />
@@ -36,7 +36,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 py-5 text-center text-xs">
+        <div className="max-w-[1840px] mx-auto px-4 py-5 text-center text-xs">
           <p>© 2026 Bunker 81 Airsoft. Todos os direitos reservados.</p>
           <p className="mt-1 text-[11px] tracking-wide opacity-60">Powered by Menoh</p>
         </div>

@@ -40,7 +40,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           alt={product.name}
           loading="lazy"
           className={cn(
-            "product-stage-image p-4 transition-transform duration-500 group-hover:scale-105",
+            "product-stage-image p-4 lg:p-2 transition-transform duration-500 group-hover:scale-105",
             // As fotos usam mix-blend-multiply: sobrepostas, as duas apareceriam juntas.
             product.images[1] && "transition-[transform,opacity] group-hover:opacity-0",
           )}
@@ -51,7 +51,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             alt=""
             aria-hidden="true"
             loading="lazy"
-            className="product-stage-image absolute inset-0 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="product-stage-image absolute inset-0 p-4 lg:p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           />
         )}
 
