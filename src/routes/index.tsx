@@ -62,7 +62,7 @@ function Home() {
 
       {/* CARROSSEL 1 */}
       <section id="catalogo" className="bg-bunker-black border-t border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 py-14">
+        <div className="max-w-[1840px] mx-auto px-4 py-14">
           <SectionTitle
             title="Arsenal em Destaque"
             subtitle="Seleção especial da Bunker 81"
@@ -89,7 +89,7 @@ function Home() {
           backgroundPosition: "center",
         }}
       >
-        <div className="max-w-[1400px] mx-auto px-4 pb-10 md:pb-16 w-full">
+        <div className="max-w-[1840px] mx-auto px-4 pb-10 md:pb-16 w-full">
           <p
             className="font-display uppercase tracking-wider text-bunker-text-primary text-2xl md:text-3xl lg:text-4xl max-w-2xl leading-tight"
             style={{ textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
@@ -101,7 +101,7 @@ function Home() {
 
       {/* CARROSSEL 2 */}
       <section className="bg-bunker-black">
-        <div className="max-w-[1400px] mx-auto px-4 py-14">
+        <div className="max-w-[1840px] mx-auto px-4 py-14">
           <SectionTitle
             title="Gear & Vestuário Tático"
             subtitle="Acessórios, coletes e equipamentos disponíveis no catálogo"
@@ -118,7 +118,7 @@ function Home() {
 
       {/* CATEGORIAS */}
       <section className="bg-bunker-charcoal border-t border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 py-14">
+        <div className="max-w-[1840px] mx-auto px-4 py-14">
           <SectionTitle title="Operações por Categoria" subtitle="Escolha sua linha de combate" />
           {categoriesQuery.isError ? (
             <div className="rounded-sm border border-bunker-graphite bg-bunker-black p-8 text-center">

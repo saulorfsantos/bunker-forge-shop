@@ -141,7 +141,7 @@ function CategoryPage() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
+        <div className="max-w-[1840px] mx-auto px-4 py-6 md:py-10">
           <Skeleton className="h-4 w-48 mb-4 bg-bunker-graphite-light/60" />
           <Skeleton className="h-12 w-64 mb-6 bg-bunker-graphite-light/60" />
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8">
@@ -265,7 +265,7 @@ function CategoryPage() {
 
   return (
     <Layout>
-      <div className="max-w-[1400px] mx-auto px-4 py-6 md:py-10">
+      <div className="max-w-[1840px] mx-auto px-4 py-6 md:py-10">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1 text-xs text-bunker-text-secondary mb-4">
           <Link to="/" className="hover:text-bunker-tan">

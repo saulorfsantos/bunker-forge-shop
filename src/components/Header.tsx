@@ -65,7 +65,7 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full">
       {/* Main bar */}
       <div className="bg-bunker-black border-b border-bunker-graphite">
-        <div className="max-w-[1400px] mx-auto px-4 h-32 flex items-center gap-4">
+        <div className="max-w-[1840px] mx-auto px-4 h-32 flex items-center gap-4">
           <Link to="/" className="shrink-0 flex items-center gap-3">
             <img src={logoShield} alt="Bunker 81 Airsoft" className="h-24 w-auto" />
             <span className="hidden lg:flex flex-col leading-none">
@@ -168,8 +168,8 @@ export function Header() {
 
       {/* Category nav */}
       <nav className="bg-bunker-menu border-b border-bunker-tan-dark hidden lg:block">
-        {/* 15% wider than the page grid (Saulo, 17/10); type 20% larger (Adriano, 19/10). */}
-        <div className="max-w-[1610px] mx-auto px-2 xl:px-4 h-14 flex items-stretch justify-between">
+        {/* Same width as the listing pages (Saulo, 12/11); type 20% larger (Adriano, 19/10). */}
+        <div className="max-w-[1840px] mx-auto px-2 xl:px-4 h-14 flex items-stretch justify-between">
           {categories.map((cat, index) => (
             <div key={cat.slug} className="relative group h-full flex items-center">
               <Link
